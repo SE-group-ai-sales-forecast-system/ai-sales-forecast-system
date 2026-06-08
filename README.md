@@ -79,7 +79,7 @@ ai-sales-forecast-system/
     └── run.sh / run.bat
 ```
 
-## 🚀 快速开始
+## 🚀 用户快速开始
 
 ### 1. 克隆仓库
 
