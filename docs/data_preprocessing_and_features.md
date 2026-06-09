@@ -24,7 +24,7 @@
 | Order_ID | 标识 | 唯一订单号 | 主键 |
 | Customer_Name | 文本 | 客户姓名 | 可选用户画像 |
 
-## 二、数据预处理（负责人：2号）
+## 二、数据预处理（由数据负责人负责）
 
 ### 2.1 基础清洗
 
@@ -73,10 +73,10 @@ daily = daily.merge(daily_discount, left_on='ds', right_index=True, how='left')
 daily = daily.merge(daily_shipping, left_on='ds', right_index=True, how='left')
 ```
 
-## 三、特征工程（负责人：4号）
+## 三、特征工程（由算法负责人B负责）
 
 基于 `daily_sales_for_forecast.csv`（如包含额外特征则一并使用）。
-
+B
 ### 3.1 时间特征
 
 ```python
@@ -117,7 +117,7 @@ train = df[df['ds'] < split_date]
 test = df[df['ds'] >= split_date]
 ```
 
-## 四、库存预警模拟方案（负责人：4号）
+## 四、库存预警模拟方案（由算法负责人B负责）
 
 由于数据无真实库存字段，采用以下模拟规则：
 
