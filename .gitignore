@@ -15,6 +15,7 @@ venv/
 *.swo
 
 # Data
+data/raw/*.csv
 data/raw/*.xlsx
 *.db
 
