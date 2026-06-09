@@ -39,7 +39,7 @@ ai-sales-forecast-system/
 ├── requirements.txt
 │
 ├── data/                     # 数据目录
-│   ├── raw/                  # 原始数据（不提交git）
+│   ├── raw/                  # 原始数据
 │   ├── processed/            # 清洗后数据（示例数据可提交）
 │   └── data_dict.md          # 字段说明
 │
@@ -166,7 +166,11 @@ pytest tests/test_algorithm.py
 
 ## 📄 主要文档
 
-- [需求分析文档](docs/requirements/requirements.md)
+- [需求分析文档](docs/requirements.md)
+- [数据字典文档](data/data_dict.md)
+- [最小可行产品（MVP）功能文档](docs/mvp_scope.md)
+- [项目计划与推进方案](docs/project_plan.md)  
+Pending:
 - [软件设计文档](docs/design/design.md)
 - [测试计划与用例报告](docs/management/test_plan.md)
 - [项目进度与会议记录](docs/management/progress.md)
@@ -186,4 +190,4 @@ pytest tests/test_algorithm.py
 
 ## 📜 免责声明
 
-本项目为课程实践作品，部分或全部数据为模拟或公开数据集，仅用于教学展示。使用者应遵守相应LICENSE并对生成内容负责，开发者概不承担由此产生的任何责任。
+本项目为课程实践作品，部分或全部数据为模拟或公开数据集，仅用于教学展示。使用者应遵守相应 LICENSE 并对生成内容负责，开发者概不承担由此产生的任何责任。

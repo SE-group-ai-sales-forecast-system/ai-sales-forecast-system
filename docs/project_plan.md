@@ -160,6 +160,6 @@ CREATE TABLE inventory_warnings (
 
 1. 组长在 GitHub 创建仓库，邀请成员，初始化目录结构
 2. 数据负责人下载并检查数据集，完成基础清洗
-3. 全组确认 MVP 功能范围（见 `mvp_scope.md`）
+3. 全组确认 MVP 功能范围（见 [`mvp_scope.md`](docs/mvp_scope.md)）
 4. 绘制用例图、系统架构图、ER 图
 5. 搭建 FastAPI 骨架和 Streamlit 预览页面
