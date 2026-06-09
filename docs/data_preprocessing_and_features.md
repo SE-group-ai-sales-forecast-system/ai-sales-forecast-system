@@ -73,10 +73,10 @@ daily = daily.merge(daily_discount, left_on='ds', right_index=True, how='left')
 daily = daily.merge(daily_shipping, left_on='ds', right_index=True, how='left')
 ```
 
-## 三、特征工程（由算法负责人负责）
+## 三、特征工程（由算法负责人B负责）
 
 基于 `daily_sales_for_forecast.csv`（如包含额外特征则一并使用）。
-
+B
 ### 3.1 时间特征
 
 ```python
@@ -117,7 +117,35 @@ train = df[df['ds'] < split_date]
 test = df[df['ds'] >= split_date]
 ```
 
-## 四、评估指标
+## 四、库存预警模拟方案（由算法负责人B负责）
+
+由于数据无真实库存字段，采用以下模拟规则：
+
+```python
+def simulate_inventory_warnings(df_orders, forecast_7d_dict):
+    # 计算每个类别过去30天的日均销量
+    last_30 = df_orders[df_orders['Order_Date'] > df_orders['Order_Date'].max() - pd.Timedelta(days=30)]
+    avg_daily = last_30.groupby('Product_Category')['Quantity'].mean()
+    
+    # 当前库存 = 日均销量 × 14（安全天数）
+    current_stock = avg_daily * 14
+    
+    warnings = []
+    for cat in current_stock.index:
+        forecast_7d = forecast_7d_dict.get(cat, 0)
+        safe_stock = forecast_7d * 1.2
+        if current_stock[cat] < safe_stock:
+            warnings.append({
+                'category': cat,
+                'current_stock': round(current_stock[cat], 2),
+                'forecast_7d': forecast_7d,
+                'safe_stock': round(safe_stock, 2),
+                'suggested_order': round(safe_stock - current_stock[cat], 2)
+            })
+    return warnings
+```
+
+## 五、评估指标
 
 - **MAE**（平均绝对误差）
 - **RMSE**（均方根误差）
