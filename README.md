@@ -22,7 +22,7 @@
 | 层次         | 技术选型                                                     |
 | ------------ | ------------------------------------------------------------ |
 | **前端**     | Streamlit（快速原型） / Vue3 + ECharts（可换）                |
-| **后端**     | Python 3.10 + FastAPI + Uvicorn                              |
+| **后端**     | Python 3.13.12 + FastAPI + Uvicorn                              |
 | **算法**     | Pandas, NumPy, Scikit-learn, LightGBM, Prophet（基线模型）    |
 | **数据库**   | SQLite（开发）/ MySQL（可选）                                |
 | **可视化**   | Plotly, Matplotlib, ECharts                                  |
