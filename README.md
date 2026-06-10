@@ -169,6 +169,7 @@ pytest tests/test_algorithm.py
 - [数据字典文档](data/data_dict.md)
 - [最小可行产品（MVP）功能文档](docs/mvp_scope.md)
 - [项目计划与推进方案](docs/project_plan.md)  
+- [用例](docs/design/use_case.md)
 
 ## 📌 版本规划
 
