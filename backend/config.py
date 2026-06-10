@@ -13,5 +13,9 @@ class Settings:
     
     # 预测默认天数
     DEFAULT_PREDICT_DAYS = [7, 14, 30]
-
+    
+    # ========== JWT 认证配置 ==========
+    SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key")
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_HOURS = 24
 settings = Settings()

@@ -9,3 +9,5 @@ plotly>=5.15.0
 matplotlib>=3.7.0
 prophet>=1.1.0   # 可选，用于基线模型
 pytest>=7.4.0    # 用于测试
+python-multipart>=0.0.6
+PyJWT>=2.8.0

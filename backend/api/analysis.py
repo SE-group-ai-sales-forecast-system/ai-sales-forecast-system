@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from models.schemas import SalesAnalysisRequest, SalesAnalysisResponse
 from services.data_service import data_service
+from dependencies.auth import get_current_user 
 import pandas as pd
 
 router = APIRouter()
 
 @router.post("/analysis", response_model=SalesAnalysisResponse)
-async def get_sales_analysis(request: SalesAnalysisRequest):
+async def get_sales_analysis(
+    request: SalesAnalysisRequest,
+    current_user: dict = Depends(get_current_user) 
+):
     """获取销售分析数据 - 从已上传的 CSV 读取"""
     try:
         if data_service.current_data is None:
