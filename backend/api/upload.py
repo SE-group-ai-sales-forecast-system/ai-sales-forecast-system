@@ -1,11 +1,16 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from services.data_service import data_service
 from models.schemas import UploadResponse
+from dependencies.auth import get_current_user
 
 router = APIRouter()
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)                      
+):
+    print(f"用户 {current_user['username']} 上传了文件 {file.filename}")
     """上传CSV数据文件"""
     # 检查文件格式
     if not file.filename.endswith('.csv'):

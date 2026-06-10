@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from api import upload, analysis, predict
+from api import upload, analysis, predict, inventory, auth
 
 app = FastAPI(
     title="AI销售预测系统API",
@@ -18,8 +18,10 @@ app.add_middleware(
 )
 
 # 注册路由
+app.include_router(auth.router, prefix="/api", tags=["用户认证"])
 app.include_router(upload.router, prefix="/api", tags=["数据上传"])
 app.include_router(analysis.router, prefix="/api", tags=["数据分析"])
+app.include_router(inventory.router, prefix="/api", tags=["库存预警"])
 app.include_router(predict.router, prefix="/api", tags=["销量预测"])
 
 @app.get("/health")
