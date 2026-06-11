@@ -169,10 +169,10 @@ pytest tests/test_algorithm.py
 ## 📄 主要文档
 
 - [分支协作规范](BRANCH_STRATEGY.md)
-- [需求分析文档](docs/requirements.md)
+- [需求分析文档](docs/requirements/requirements.md)
 - [数据字典文档](data/data_dict.md)
-- [最小可行产品（MVP）功能文档](docs/mvp_scope.md)
-- [项目计划与推进方案](docs/project_plan.md)  
+- [最小可行产品（MVP）功能文档](docs/requirements/mvp_scope.md)
+- [项目计划与推进方案](docs/management/project_plan.md)  
 - [用例](docs/design/use_case.md)
 
 ## 📌 版本规划
