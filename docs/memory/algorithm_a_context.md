@@ -1,0 +1,130 @@
+# 算法A协作开发记忆文件
+
+## 1. 项目协作背景
+
+- 项目名称：AI 智能电商商品销售分析与预测系统。
+- 远程仓库：`SE-group-ai-sales-forecast-system/ai-sales-forecast-system`。
+- 协作模式：六人小组在两周内模拟两个月的软件工程协作开发流程。
+- 项目性质：软件工程期末实践项目，重点不仅是代码实现，也包括需求、设计、分工、分支协作、测试验证、PR 审查和答辩追踪。
+- 当前主要开发分支：`develop`。
+- 稳定发布分支：`main`，不直接在 `main` 上开发。
+
+## 2. 我的角色与职责
+
+- 我的协作角色：算法A。
+- 当前主线任务：实现销售预测的移动平均基线模型。
+- 算法A定位：
+  - 为系统提供可稳定调用的基础预测能力。
+  - 在更复杂模型不可用或依赖未安装时，作为后端预测服务的可靠兜底方案。
+  - 优先保证接口稳定、输出格式统一、测试可验证。
+
+## 3. 仓库整体结构与当前状态
+
+### 主要目录
+
+- `algorithm/`：算法模块目录，当前已新增移动平均基线模型 `baseline_model.py`。
+- `backend/`：后端服务目录，包含预测服务等业务逻辑。
+- `frontend/`：前端目录，早期检查时前端实现仍较薄弱。
+- `data/`：数据目录，用于存放原始数据、处理后数据或示例数据。
+- `docs/`：项目文档目录。
+  - `docs/requirements/`：需求与 MVP 范围文档。
+  - `docs/design/`：架构设计、用例图等设计文档。
+  - `docs/management/`：项目计划、详细分工等管理文档。
+  - `docs/testing/`：测试报告与验证记录。
+  - `docs/memory/`：面向后续协作恢复上下文的记忆文件。
+- `tests/`：测试目录，当前已包含算法A相关单元测试 `test_algorithm.py`。
+
+### 当前已完成的算法A工作
+
+- 已从 `develop` 创建功能分支：`feature/baseline-forecast`。
+- 已实现 `algorithm/baseline_model.py`：
+  - `BaselinePredictor` 移动平均预测器。
+  - 默认窗口为 7 天。
+  - 返回结构兼容后端预测服务：`{"dates": [...], "sales": [...]}`。
+  - 支持按商品类别或商品名筛选历史销量。
+  - 支持列表、字典、CSV 路径和类 DataFrame 输入。
+  - 数据不足或无数据时返回稳定兜底结果，避免接口崩溃。
+- 已更新 `backend/services/predict_service.py`：
+  - 优先调用 LightGBM。
+  - LightGBM 不可用时回退到移动平均基线模型。
+  - 避免继续使用随机模拟数据作为主要兜底。
+- 已新增 `tests/test_algorithm.py`：
+  - 覆盖预测天数、日期连续、销量非负、类别筛选、原始订单列名兼容、0 销量保留等行为。
+- 已新增测试报告：
+  - `docs/testing/baseline_forecast_test_report.md`
+- 已更新 `.gitignore`：
+  - 忽略本地 `tests/ffmpeg.zip`
+  - 忽略本地 `tests/ffmpeg_tmp/`
+
+### 当前分支与 PR 状态
+
+- 当前功能分支：`feature/baseline-forecast`。
+- 目标合并分支：`develop`。
+- 已创建 PR：`https://github.com/SE-group-ai-sales-forecast-system/ai-sales-forecast-system/pull/12`
+- 当前功能分支已推送到远端，并包含算法实现、测试报告和 `.gitignore` 更新。
+
+## 4. 具体开发计划
+
+### 已完成计划
+
+1. 从 `develop` 新建 `feature/baseline-forecast` 分支。
+2. 实现移动平均基线预测模型。
+3. 将基线模型接入后端预测服务兜底逻辑。
+4. 编写算法A单元测试。
+5. 安装并使用 pytest 做更详细测试。
+6. 编写测试报告并提交到 `docs/testing/`。
+7. 忽略本地测试产物，避免误提交无关大文件。
+8. 推送功能分支并创建指向 `develop` 的 PR。
+
+### 后续建议计划
+
+1. 等待 PR 审查，并根据 review comments 修改。
+2. 数据负责人提交真实销售数据后，补充基于真实数据的集成测试。
+3. 为移动平均模型补充误差评估指标，例如 MAE、RMSE 或 MAPE。
+4. 准备“真实销量 vs 移动平均预测”的可视化结果，服务答辩展示。
+5. 与后端成员确认预测接口字段、异常返回和前端展示格式。
+6. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
+
+## 5. 必须严格遵守的协作规范
+
+- 所有功能开发必须从 `develop` 分支切出功能分支。
+- 功能分支命名应清晰表达任务，例如 `feature/baseline-forecast`。
+- 不直接向 `main` 提交代码。
+- 不直接把未审查代码合并到 `develop`。
+- 合并应通过 PR，目标分支为 `develop`。
+- 提交信息使用中文，便于课程项目记录和答辩追踪。
+- 每次提交前必须检查：
+  - 当前所在分支是否正确。
+  - `git status` 是否只包含本任务相关文件。
+  - 是否误加入临时文件、大文件、缓存文件或本地环境文件。
+- 修改代码后必须尽量运行相关测试，并在 PR 或测试报告中说明测试结果。
+- 不随意回滚或覆盖队友改动。
+- 发现远端 `develop` 更新后，应及时同步并处理冲突。
+- 文档、测试和代码实现应一起维护，避免只有代码没有说明。
+
+## 6. 当前可复用命令
+
+```powershell
+git checkout develop
+git pull origin develop
+git checkout feature/baseline-forecast
+git status --short --branch
+```
+
+```powershell
+python -m compileall -q algorithm backend tests
+python -m pytest tests -q
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+```powershell
+python -c "from algorithm.baseline_model import BaselinePredictor; print(BaselinePredictor().predict('Technology', 7))"
+```
+
+## 7. 后续继续工作时的优先级
+
+1. 优先保证当前 PR 与 `develop` 不冲突。
+2. 优先响应 PR 审查意见。
+3. 优先补充真实数据接入后的测试，而不是提前实现复杂模型。
+4. 优先保持算法A接口稳定，避免影响后端和前端协作。
+5. 优先记录关键测试结果和设计理由，方便最终答辩。
