@@ -1,3 +1,4 @@
+```mermaid
 graph TB
     subgraph Frontend["前端层"]
         UI["Streamlit / Vue3<br>用户交互看板"]
@@ -44,3 +45,4 @@ graph TB
     
     DataSvc --> CSV
     AuthSvc --> DB
+```
