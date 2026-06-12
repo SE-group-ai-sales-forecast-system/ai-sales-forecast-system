@@ -1,7 +1,9 @@
 import unittest
 from datetime import datetime
+from pathlib import Path
 
 from algorithm.baseline_model import BaselinePredictor
+from backend.services.predict_service import PredictService
 
 
 class BaselinePredictorTest(unittest.TestCase):
@@ -56,6 +58,18 @@ class BaselinePredictorTest(unittest.TestCase):
 
         self.assertEqual(result["sales"], [6.0])
 
+    def test_predict_fills_missing_calendar_days_with_zero(self):
+        rows = [
+            {"Order_Date": "2026-06-01", "Product_Category": "Office Supplies", "Quantity": "4"},
+            {"Order_Date": "2026-06-03", "Product_Category": "Office Supplies", "Quantity": "8"},
+        ]
+        predictor = BaselinePredictor(rows, window=3)
+
+        result = predictor.predict("Office Supplies", days=1)
+
+        self.assertEqual(result["dates"], ["2026-06-04"])
+        self.assertEqual(result["sales"], [4.0])
+
     def test_predict_keeps_zero_sales_days(self):
         rows = [
             {"ds": "2026-06-01", "category": "Technology", "y": 0},
@@ -66,6 +80,28 @@ class BaselinePredictorTest(unittest.TestCase):
         result = predictor.predict("Technology", days=1)
 
         self.assertEqual(result["sales"], [5.0])
+
+    def test_predict_with_real_raw_csv(self):
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+        predictor = BaselinePredictor(csv_path, window=7)
+
+        result = predictor.predict("Technology", days=7)
+
+        self.assertEqual(len(result["dates"]), 7)
+        self.assertEqual(len(result["sales"]), 7)
+        self.assertEqual(result["dates"][0], "2026-01-01")
+        self.assertTrue(all(isinstance(value, float) for value in result["sales"]))
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_predict_service_falls_back_to_baseline_when_lightgbm_missing(self):
+        service = PredictService()
+        service.lightgbm = None
+
+        result = service.predict("Technology", 3, "lightgbm")
+
+        self.assertEqual(len(result["dates"]), 3)
+        self.assertEqual(len(result["sales"]), 3)
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
 
 
 if __name__ == "__main__":
