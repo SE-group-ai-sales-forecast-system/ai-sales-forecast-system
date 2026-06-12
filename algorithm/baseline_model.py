@@ -7,7 +7,7 @@ it predicts future sales with a moving average over recent historical sales.
 from __future__ import annotations
 
 import csv
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -90,8 +90,8 @@ class BaselinePredictor:
         self,
         rows: list[dict[str, Any]],
         product_id: str,
-    ) -> dict[Any, float]:
-        series: dict[Any, float] = {}
+    ) -> dict[date, float]:
+        series: dict[date, float] = {}
         target = str(product_id)
 
         for row in rows:
@@ -112,7 +112,22 @@ class BaselinePredictor:
 
             series[parsed_date] = series.get(parsed_date, 0.0) + parsed_sales
 
-        return series
+        return self._fill_missing_dates(series)
+
+    def _fill_missing_dates(self, series: dict[date, float]) -> dict[date, float]:
+        if not series:
+            return {}
+
+        start_date = min(series)
+        end_date = max(series)
+        days_count = (end_date - start_date).days
+        return {
+            start_date + timedelta(days=offset): series.get(
+                start_date + timedelta(days=offset),
+                0.0,
+            )
+            for offset in range(days_count + 1)
+        }
 
     def _first_present(self, row: dict[str, Any], keys: list[str]) -> Any | None:
         for key in keys:

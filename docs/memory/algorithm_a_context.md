@@ -55,13 +55,21 @@
 - 已更新 `.gitignore`：
   - 忽略本地 `tests/ffmpeg.zip`
   - 忽略本地 `tests/ffmpeg_tmp/`
+- 已从最新 `develop` 新建后续稳固分支：`feature/algorithm-a-real-data-validation`。
+- 已补强真实原始订单数据场景：
+  - 按日期聚合后补齐类别历史区间内缺失日期为 0 销量。
+  - 让 7 日移动平均按连续日历天计算，而不是只按有订单的日期计算。
+- 已补充真实数据验证：
+  - 直接读取 `data/raw/global_ecommerce_sales.csv`。
+  - 验证 `Technology` 类别预测从 `2026-01-01` 开始。
+  - 验证 LightGBM 不存在时后端预测服务可回退到基线模型。
 
 ### 当前分支与 PR 状态
 
-- 当前功能分支：`feature/baseline-forecast`。
+- 基线模型功能分支 `feature/baseline-forecast` 已通过 PR 合入 `develop`。
+- 当前后续稳固分支：`feature/algorithm-a-real-data-validation`。
 - 目标合并分支：`develop`。
-- 已创建 PR：`https://github.com/SE-group-ai-sales-forecast-system/ai-sales-forecast-system/pull/12`
-- 当前功能分支已推送到远端，并包含算法实现、测试报告和 `.gitignore` 更新。
+- 当前分支用于补充真实数据预测验证、测试报告更新和算法A上下文更新。
 
 ## 4. 具体开发计划
 
@@ -75,6 +83,9 @@
 6. 编写测试报告并提交到 `docs/testing/`。
 7. 忽略本地测试产物，避免误提交无关大文件。
 8. 推送功能分支并创建指向 `develop` 的 PR。
+9. 基于真实原始数据补充预测冒烟测试。
+10. 补强缺失日期按 0 销量参与移动平均的逻辑。
+11. 补充后端预测服务回退到基线模型的轻量验证。
 
 ### 后续建议计划
 
