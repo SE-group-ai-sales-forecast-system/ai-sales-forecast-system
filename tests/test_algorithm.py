@@ -1,6 +1,12 @@
 import unittest
 from datetime import datetime
 from pathlib import Path
+import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+BACKEND_DIR = PROJECT_ROOT / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.append(str(BACKEND_DIR))
 
 from algorithm.baseline_model import BaselinePredictor
 from backend.services.predict_service import PredictService
@@ -101,7 +107,54 @@ class BaselinePredictorTest(unittest.TestCase):
 
         self.assertEqual(len(result["dates"]), 3)
         self.assertEqual(len(result["sales"]), 3)
+        self.assertEqual(result["dates"][0], "2026-01-01")
         self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_predict_service_uses_default_raw_csv_without_uploaded_data(self):
+        service = PredictService()
+
+        result = service.predict("Technology", 7, "baseline")
+
+        self.assertEqual(result["dates"][0], "2026-01-01")
+        self.assertEqual(len(result["dates"]), 7)
+        self.assertEqual(len(result["sales"]), 7)
+        self.assertTrue(any(value > 0 for value in result["sales"]))
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_predict_api_returns_baseline_forecast(self):
+        try:
+            from fastapi.testclient import TestClient
+        except ModuleNotFoundError:
+            self.skipTest("FastAPI is not installed in the current environment")
+
+        from backend.main import app
+        from api.predict import get_current_user
+
+        app.dependency_overrides[get_current_user] = lambda: {
+            "username": "algorithm-a-test",
+            "role": "user",
+        }
+        try:
+            client = TestClient(app)
+            response = client.post(
+                "/api/predict",
+                json={
+                    "product_id": "Technology",
+                    "days": 7,
+                    "model_type": "baseline",
+                },
+            )
+        finally:
+            app.dependency_overrides.clear()
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["product_id"], "Technology")
+        self.assertEqual(body["predicted_dates"][0], "2026-01-01")
+        self.assertEqual(len(body["predicted_dates"]), 7)
+        self.assertEqual(len(body["predicted_sales"]), 7)
+        self.assertTrue(any(value > 0 for value in body["predicted_sales"]))
+        self.assertTrue(all(value >= 0 for value in body["predicted_sales"]))
 
 
 if __name__ == "__main__":

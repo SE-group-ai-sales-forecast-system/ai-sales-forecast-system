@@ -63,13 +63,20 @@
   - 直接读取 `data/raw/global_ecommerce_sales.csv`。
   - 验证 `Technology` 类别预测从 `2026-01-01` 开始。
   - 验证 LightGBM 不存在时后端预测服务可回退到基线模型。
+- 已完成 6/13 预测接口联调稳固：
+  - PR #15 `test(算法): 补充真实数据预测验证` 已合入 `develop`。
+  - 从最新 `develop` 新建 `feature/algorithm-a-predict-api-integration`。
+  - 后端预测服务在未上传数据时默认读取 `data/raw/global_ecommerce_sales.csv`。
+  - 从项目根目录或 `backend/` 目录调用预测服务时，都能返回真实数据驱动的预测结果。
+  - 已补充 `/api/predict` TestClient 轻量联调测试。
 
 ### 当前分支与 PR 状态
 
 - 基线模型功能分支 `feature/baseline-forecast` 已通过 PR 合入 `develop`。
-- 当前后续稳固分支：`feature/algorithm-a-real-data-validation`。
+- 真实数据验证分支 `feature/algorithm-a-real-data-validation` 已通过 PR #15 合入 `develop`。
+- 当前后续稳固分支：`feature/algorithm-a-predict-api-integration`。
 - 目标合并分支：`develop`。
-- 当前分支用于补充真实数据预测验证、测试报告更新和算法A上下文更新。
+- 当前分支用于补充 6/13 后端预测接口默认真实数据源、HTTP 轻量联调测试、测试报告更新和算法A上下文更新。
 
 ## 4. 具体开发计划
 
@@ -86,6 +93,9 @@
 9. 基于真实原始数据补充预测冒烟测试。
 10. 补强缺失日期按 0 销量参与移动平均的逻辑。
 11. 补充后端预测服务回退到基线模型的轻量验证。
+12. 完成后端预测服务默认真实 CSV 数据源回退。
+13. 补充 `/api/predict` 轻量联调测试。
+14. 记录 6/13 预测接口联调验证结果。
 
 ### 后续建议计划
 

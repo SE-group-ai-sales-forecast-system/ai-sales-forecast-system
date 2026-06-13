@@ -2,8 +2,8 @@
 
 ## 基本信息
 
-- 测试日期：2026-06-11
-- 测试分支：`feature/baseline-forecast`
+- 测试日期：2026-06-11、2026-06-13
+- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`
 - 测试对象：算法A移动平均基线预测模型
 - 相关模块：
   - `algorithm/baseline_model.py`
@@ -31,6 +31,8 @@
 - 是否将历史区间内缺失日期按 0 销量补齐后参与移动平均
 - 是否能直接读取真实原始数据 `data/raw/global_ecommerce_sales.csv` 进行预测
 - LightGBM 不存在时，后端预测服务是否能回退到移动平均基线模型
+- 未上传数据时，后端预测服务是否能默认读取真实原始 CSV，而不是返回全 0 空预测
+- `/api/predict` 是否能在测试鉴权替换后返回后端响应结构
 - 在无历史数据时，预测接口是否仍返回后端兼容结构：`{"dates": [...], "sales": [...]}`
 
 ## 执行命令与结果
@@ -82,14 +84,16 @@ tests/test_algorithm.py::BaselinePredictorTest::test_predict_fills_missing_calen
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_filters_category
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_keeps_zero_sales_days
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_sales_are_non_negative
+tests/test_algorithm.py::BaselinePredictorTest::test_predict_api_returns_baseline_forecast
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_falls_back_to_baseline_when_lightgbm_missing
+tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_uses_default_raw_csv_without_uploaded_data
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_supports_raw_order_columns
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_with_real_raw_csv
 
-9 tests collected in 0.09s
+11 tests collected
 ```
 
-结论：pytest 能正常发现算法测试用例，共收集 9 项。
+结论：pytest 能正常发现算法与后端预测接口相关测试用例，共收集 11 项。
 
 ### 4. pytest 详细执行
 
@@ -108,11 +112,13 @@ tests/test_algorithm.py::BaselinePredictorTest::test_predict_fills_missing_calen
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_filters_category PASSED
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_keeps_zero_sales_days PASSED
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_sales_are_non_negative PASSED
+tests/test_algorithm.py::BaselinePredictorTest::test_predict_api_returns_baseline_forecast PASSED
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_falls_back_to_baseline_when_lightgbm_missing PASSED
+tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_uses_default_raw_csv_without_uploaded_data PASSED
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_supports_raw_order_columns PASSED
 tests/test_algorithm.py::BaselinePredictorTest::test_predict_with_real_raw_csv PASSED
 
-9 passed in 0.15s
+11 passed
 ```
 
 结论：算法单元测试全部通过。
@@ -128,8 +134,8 @@ python -m pytest tests -q
 结果：
 
 ```text
-.........                                                                [100%]
-9 passed in 0.18s
+...........                                                              [100%]
+11 passed, 1 warning in 2.58s
 ```
 
 结论：当前 tests 目录下可执行的 pytest 测试全部通过。
@@ -145,7 +151,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 结果：
 
 ```text
-Ran 9 tests in 0.034s
+Ran 11 tests
 
 OK
 ```
@@ -194,12 +200,40 @@ python -c "from algorithm.baseline_model import BaselinePredictor; print(Baselin
 
 结论：后端预测服务在复杂模型不可用时仍能稳定返回结果，符合算法A作为兜底模型的职责。
 
+### 10. 6/13 预测服务默认真实数据源验证
+
+命令：
+
+```powershell
+python -c "from backend.services.predict_service import PredictService; print(PredictService().predict('Technology', 7, 'baseline'))"
+```
+
+结果：
+
+```text
+{'dates': ['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05', '2026-01-06', '2026-01-07'], 'sales': [1.14, 1.14, 1.14, 1.14, 1.14, 1.14, 1.14]}
+```
+
+结论：后端预测服务在未上传数据时会默认读取仓库内真实原始 CSV，不再返回全 0 空预测；预测日期从真实数据最后日期 `2025-12-31` 的下一天开始。
+
+### 11. 6/13 `/api/predict` 轻量联调验证
+
+验证内容：
+
+- 使用 FastAPI `TestClient` 调用 `/api/predict`。
+- 在测试中替换鉴权依赖，避免登录流程干扰预测接口验证。
+- 请求 `{"product_id": "Technology", "days": 7, "model_type": "baseline"}`。
+- 响应包含 `product_id`、`predicted_dates`、`predicted_sales` 和 `confidence_interval`。
+- `predicted_dates` 从 `2026-01-01` 开始，`predicted_sales` 为非负且不全为 0。
+
+结论：6/13 算法A“供后端调用”的接口联调路径已经通过最小自动化测试。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测和后端回退验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性和真实数据输入均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证和 `/api/predict` 轻量联调验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入和后端接口调用均符合本阶段交付要求。
 
 ## 注意事项
 
-- 当前测试主要覆盖算法模块核心行为与后端预测服务轻量回退，尚未覆盖完整前后端 HTTP 联调流程。
+- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退和 `/api/predict` 最小 HTTP 联调，尚未覆盖前端 Streamlit 页面到后端接口的完整人工联调流程。
 - 本地 `tests/ffmpeg.zip` 与 `tests/ffmpeg_tmp/` 已加入 `.gitignore`，不会进入后续提交。
 - 后续如数据负责人提供 `daily_sales_for_forecast.csv`，建议继续补充基于每日聚合表的集成测试。

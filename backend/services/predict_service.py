@@ -1,19 +1,27 @@
 import sys
 from pathlib import Path
 
-# 添加algorithm模块到路径
-project_root = Path(__file__).parent.parent.parent
-sys.path.append(str(project_root))
+# 添加项目根目录和 backend 目录到路径，兼容从项目根目录或 backend 目录启动。
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+for path in (PROJECT_ROOT, BACKEND_ROOT):
+    path_text = str(path)
+    if path_text not in sys.path:
+        sys.path.append(path_text)
+
+DEFAULT_RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "global_ecommerce_sales.csv"
+
 
 class PredictService:
     def __init__(self):
         """初始化预测服务，导入算法模块"""
         self.lightgbm = None
         self.baseline = None
+        self.default_data_path = DEFAULT_RAW_DATA_PATH
 
         try:
             from algorithm.baseline_model import BaselinePredictor
-            self.baseline = BaselinePredictor()
+            self.baseline = BaselinePredictor(self._default_data_source())
         except ImportError as e:
             print(f"基线模型导入失败: {e}")
 
@@ -29,14 +37,35 @@ class PredictService:
             return self.lightgbm.predict(product_id, days)
 
         if self.baseline is not None:
-            try:
-                from services.data_service import data_service
-                current_data = data_service.current_data
-            except ImportError:
-                current_data = None
+            current_data = self._current_or_default_data()
             return self.baseline.predict(product_id, days, data=current_data)
 
         return self._empty_predict(days)
+
+    def _current_or_default_data(self):
+        """优先使用上传数据，未上传时回退到仓库内真实原始 CSV。"""
+        data_service = self._load_data_service()
+        if data_service is not None and data_service.current_data is not None:
+            return data_service.current_data
+        return self._default_data_source()
+
+    def _load_data_service(self):
+        try:
+            from backend.services.data_service import data_service
+            return data_service
+        except ImportError:
+            pass
+
+        try:
+            from services.data_service import data_service
+            return data_service
+        except ImportError:
+            return None
+
+    def _default_data_source(self):
+        if self.default_data_path.exists():
+            return self.default_data_path
+        return None
     
     def _empty_predict(self, days: int):
         """稳定的空预测，避免在无模型时返回随机结果。"""
