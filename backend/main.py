@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+backend_root = Path(__file__).resolve().parent
+backend_root_text = str(backend_root)
+if backend_root_text not in sys.path:
+    sys.path.append(backend_root_text)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import upload, analysis, predict, inventory, auth
