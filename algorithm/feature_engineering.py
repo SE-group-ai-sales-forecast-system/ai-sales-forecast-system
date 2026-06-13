@@ -44,13 +44,14 @@ def fill_missing_days(daily: pd.DataFrame) -> pd.DataFrame:
         start = group["ds"].min()
         end = group["ds"].max()
         full_index = pd.date_range(start, end, freq="D")
+        # Only reindex numeric sales; category is string and cannot use fill_value=0.0.
         expanded = (
-            group.set_index("ds")
+            group.set_index("ds")[["y"]]
             .reindex(full_index, fill_value=0.0)
             .rename_axis("ds")
             .reset_index()
         )
-        expanded["category"] = category
+        expanded["category"] = str(category)
         frames.append(expanded)
     return pd.concat(frames, ignore_index=True)
 
