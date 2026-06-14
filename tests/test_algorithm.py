@@ -121,7 +121,111 @@ class BaselinePredictorTest(unittest.TestCase):
         self.assertTrue(any(value > 0 for value in result["sales"]))
         self.assertTrue(all(value >= 0 for value in result["sales"]))
 
+    def test_predict_service_supports_required_horizons(self):
+        service = PredictService()
+
+        for days in (7, 14, 30):
+            with self.subTest(days=days):
+                result = service.predict("Technology", days, "baseline")
+
+                self.assertEqual(len(result["dates"]), days)
+                self.assertEqual(len(result["sales"]), days)
+                self.assertEqual(result["dates"][0], "2026-01-01")
+                self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_predict_service_unknown_category_keeps_contract(self):
+        service = PredictService()
+
+        result = service.predict("Unknown Category", 7, "baseline")
+
+        self.assertEqual(len(result["dates"]), 7)
+        self.assertEqual(len(result["sales"]), 7)
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_predict_service_falls_back_when_lightgbm_raises(self):
+        class BrokenLightGBM:
+            def predict(self, product_id, days, data=None):
+                raise RuntimeError("model file missing")
+
+        service = PredictService()
+        service.lightgbm = BrokenLightGBM()
+
+        result = service.predict("Technology", 7, "lightgbm")
+
+        self.assertEqual(result["dates"][0], "2026-01-01")
+        self.assertEqual(len(result["dates"]), 7)
+        self.assertEqual(len(result["sales"]), 7)
+        self.assertTrue(any(value > 0 for value in result["sales"]))
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_predict_service_falls_back_when_lightgbm_returns_bad_contract(self):
+        class BadLightGBM:
+            def predict(self, product_id, days, data=None):
+                return {"dates": [], "sales": []}
+
+        service = PredictService()
+        service.lightgbm = BadLightGBM()
+
+        result = service.predict("Technology", 7, "lightgbm")
+
+        self.assertEqual(result["dates"][0], "2026-01-01")
+        self.assertEqual(len(result["dates"]), 7)
+        self.assertEqual(len(result["sales"]), 7)
+        self.assertTrue(any(value > 0 for value in result["sales"]))
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
+
     def test_predict_api_returns_baseline_forecast(self):
+        response = self._post_predict(
+            {
+                "product_id": "Technology",
+                "days": 7,
+                "model_type": "baseline",
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["product_id"], "Technology")
+        self.assertEqual(body["predicted_dates"][0], "2026-01-01")
+        self.assertEqual(len(body["predicted_dates"]), 7)
+        self.assertEqual(len(body["predicted_sales"]), 7)
+        self.assertTrue(any(value > 0 for value in body["predicted_sales"]))
+        self.assertTrue(all(value >= 0 for value in body["predicted_sales"]))
+
+    def test_predict_api_uses_default_model_type(self):
+        response = self._post_predict(
+            {
+                "product_id": "Technology",
+                "days": 7,
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["product_id"], "Technology")
+        self.assertEqual(body["predicted_dates"][0], "2026-01-01")
+        self.assertEqual(len(body["predicted_dates"]), 7)
+        self.assertEqual(len(body["predicted_sales"]), 7)
+        self.assertTrue(all(value >= 0 for value in body["predicted_sales"]))
+
+    def test_predict_api_returns_lightgbm_or_baseline_fallback_forecast(self):
+        response = self._post_predict(
+            {
+                "product_id": "Technology",
+                "days": 14,
+                "model_type": "lightgbm",
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["product_id"], "Technology")
+        self.assertEqual(body["predicted_dates"][0], "2026-01-01")
+        self.assertEqual(len(body["predicted_dates"]), 14)
+        self.assertEqual(len(body["predicted_sales"]), 14)
+        self.assertTrue(all(value >= 0 for value in body["predicted_sales"]))
+
+    def _post_predict(self, payload):
         try:
             from fastapi.testclient import TestClient
         except ModuleNotFoundError:
@@ -136,25 +240,11 @@ class BaselinePredictorTest(unittest.TestCase):
         }
         try:
             client = TestClient(app)
-            response = client.post(
-                "/api/predict",
-                json={
-                    "product_id": "Technology",
-                    "days": 7,
-                    "model_type": "baseline",
-                },
-            )
+            response = client.post("/api/predict", json=payload)
         finally:
             app.dependency_overrides.clear()
 
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        self.assertEqual(body["product_id"], "Technology")
-        self.assertEqual(body["predicted_dates"][0], "2026-01-01")
-        self.assertEqual(len(body["predicted_dates"]), 7)
-        self.assertEqual(len(body["predicted_sales"]), 7)
-        self.assertTrue(any(value > 0 for value in body["predicted_sales"]))
-        self.assertTrue(all(value >= 0 for value in body["predicted_sales"]))
+        return response
 
 
 if __name__ == "__main__":
