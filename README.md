@@ -131,14 +131,10 @@ streamlit run frontend/app.py
 
 浏览器自动打开 `http://localhost:8501` 即可访问系统。
 
-### 7. 一键启动（可选）
+### 7. 一键启动(适配Windows和Linux/macOS)
 
 ```bash
-# Linux/macOS
-sh scripts/run.sh
-
-# Windows
-scripts\run.bat
+python scripts/start.py
 ```
 
 ## 🧪 测试
