@@ -22,25 +22,57 @@ class PredictService:
         try:
             from algorithm.baseline_model import BaselinePredictor
             self.baseline = BaselinePredictor(self._default_data_source())
-        except ImportError as e:
+        except Exception as e:
             print(f"基线模型导入失败: {e}")
 
         try:
             from algorithm.lightgbm_model import LightGBMPredictor
             self.lightgbm = LightGBMPredictor()
-        except ImportError as e:
+        except Exception as e:
             print(f"LightGBM模型导入失败: {e}")
     
     def predict(self, product_id: str, days: int, model_type: str):
         """调用预测模型"""
         if model_type == "lightgbm" and self.lightgbm is not None:
-            return self.lightgbm.predict(product_id, days)
+            current_data = self._current_or_default_data()
+            result = self._predict_with_lightgbm(product_id, days, current_data)
+            if result is not None:
+                return result
 
+        return self._predict_with_baseline(product_id, days)
+
+    def _predict_with_lightgbm(self, product_id: str, days: int, data):
+        """LightGBM 不可用或预测失败时返回 None，由调用方回退基线模型。"""
+        try:
+            result = self.lightgbm.predict(product_id, days, data=data)
+        except Exception as e:
+            print(f"LightGBM预测失败，回退基线模型: {e}")
+            return None
+
+        if not self._is_valid_result(result, days):
+            print("LightGBM预测结果格式异常，回退基线模型")
+            return None
+
+        return result
+
+    def _predict_with_baseline(self, product_id: str, days: int):
         if self.baseline is not None:
             current_data = self._current_or_default_data()
             return self.baseline.predict(product_id, days, data=current_data)
 
         return self._empty_predict(days)
+
+    def _is_valid_result(self, result, days: int) -> bool:
+        if not isinstance(result, dict):
+            return False
+        dates = result.get("dates")
+        sales = result.get("sales")
+        return (
+            isinstance(dates, list)
+            and isinstance(sales, list)
+            and len(dates) == max(1, int(days))
+            and len(sales) == max(1, int(days))
+        )
 
     def _current_or_default_data(self):
         """优先使用上传数据，未上传时回退到仓库内真实原始 CSV。"""

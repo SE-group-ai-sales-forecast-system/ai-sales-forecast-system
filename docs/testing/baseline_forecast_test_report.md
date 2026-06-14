@@ -2,8 +2,8 @@
 
 ## 基本信息
 
-- 测试日期：2026-06-11、2026-06-13
-- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`
+- 测试日期：2026-06-11、2026-06-13、2026-06-14
+- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`
 - 测试对象：算法A移动平均基线预测模型
 - 相关模块：
   - `algorithm/baseline_model.py`
@@ -31,8 +31,12 @@
 - 是否将历史区间内缺失日期按 0 销量补齐后参与移动平均
 - 是否能直接读取真实原始数据 `data/raw/global_ecommerce_sales.csv` 进行预测
 - LightGBM 不存在时，后端预测服务是否能回退到移动平均基线模型
+- LightGBM 预测抛错或返回异常结构时，后端预测服务是否能回退到移动平均基线模型
 - 未上传数据时，后端预测服务是否能默认读取真实原始 CSV，而不是返回全 0 空预测
 - `/api/predict` 是否能在测试鉴权替换后返回后端响应结构
+- `/api/predict` 是否能在默认 `model_type="lightgbm"`、显式 `baseline` 和显式 `lightgbm` 三种请求下保持响应结构稳定
+- 预测接口是否支持 7、14、30 天预测长度
+- 未知类别是否不会导致预测服务崩溃，并保持后端兼容结构
 - 在无历史数据时，预测接口是否仍返回后端兼容结构：`{"dates": [...], "sales": [...]}`
 
 ## 执行命令与结果
@@ -78,22 +82,10 @@ python -m pytest tests --collect-only -q
 结果：
 
 ```text
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_dates_are_continuous
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_days_count
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_fills_missing_calendar_days_with_zero
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_filters_category
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_keeps_zero_sales_days
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_sales_are_non_negative
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_api_returns_baseline_forecast
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_falls_back_to_baseline_when_lightgbm_missing
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_uses_default_raw_csv_without_uploaded_data
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_supports_raw_order_columns
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_with_real_raw_csv
-
-11 tests collected
+17 tests collected
 ```
 
-结论：pytest 能正常发现算法与后端预测接口相关测试用例，共收集 11 项。
+结论：pytest 能正常发现算法与后端预测接口相关测试用例，共收集 17 项。
 
 ### 4. pytest 详细执行
 
@@ -106,19 +98,7 @@ python -m pytest tests/test_algorithm.py -vv
 结果：
 
 ```text
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_dates_are_continuous PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_days_count PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_fills_missing_calendar_days_with_zero PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_filters_category PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_keeps_zero_sales_days PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_sales_are_non_negative PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_api_returns_baseline_forecast PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_falls_back_to_baseline_when_lightgbm_missing PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_service_uses_default_raw_csv_without_uploaded_data PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_supports_raw_order_columns PASSED
-tests/test_algorithm.py::BaselinePredictorTest::test_predict_with_real_raw_csv PASSED
-
-11 passed
+17 passed, 1 warning, 3 subtests passed
 ```
 
 结论：算法单元测试全部通过。
@@ -134,11 +114,11 @@ python -m pytest tests -q
 结果：
 
 ```text
-...........                                                              [100%]
-11 passed, 1 warning in 2.58s
+.................                                                     [100%]
+17 passed, 1 warning, 3 subtests passed in 1.72s
 ```
 
-结论：当前 tests 目录下可执行的 pytest 测试全部通过。
+结论：当前 tests 目录下可执行的 pytest 测试全部通过；警告为 FastAPI TestClient 依赖链中的 Starlette/httpx 弃用提示，不影响预测接口验证。
 
 ### 6. unittest 兼容验证
 
@@ -151,7 +131,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 结果：
 
 ```text
-Ran 11 tests
+Ran 17 tests
 
 OK
 ```
@@ -228,12 +208,38 @@ python -c "from backend.services.predict_service import PredictService; print(Pr
 
 结论：6/13 算法A“供后端调用”的接口联调路径已经通过最小自动化测试。
 
+### 12. 6/14 预测接口契约稳固验证
+
+验证内容：
+
+- `PredictService` 在 `model_type="baseline"` 时继续读取默认真实 CSV。
+- `PredictService` 在 `model_type="lightgbm"` 且 LightGBM 不可导入、预测抛错或返回异常结构时，稳定回退到 `BaselinePredictor`。
+- `/api/predict` 在省略 `model_type` 时使用后端默认值，并返回 200。
+- `/api/predict` 在显式 `model_type="baseline"` 和 `model_type="lightgbm"` 时都返回 `product_id`、`predicted_dates`、`predicted_sales` 和 `confidence_interval`。
+- 7、14、30 天预测长度均与请求参数一致。
+- 未知类别不会导致接口崩溃，仍返回 `dates` 和 `sales`。
+
+手工验证命令：
+
+```powershell
+python -c "from backend.services.predict_service import PredictService; print(PredictService().predict('Technology', 7, 'baseline')); print(PredictService().predict('Technology', 7, 'lightgbm'))"
+```
+
+结果：
+
+```text
+{'dates': ['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05', '2026-01-06', '2026-01-07'], 'sales': [1.14, 1.14, 1.14, 1.14, 1.14, 1.14, 1.14]}
+{'dates': ['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05', '2026-01-06', '2026-01-07'], 'sales': [1.14, 1.14, 1.14, 1.14, 1.14, 1.14, 1.14]}
+```
+
+结论：6/14 算法A已完成与算法B LightGBM 合入后的预测接口契约稳固；默认模型路径、显式基线路径和显式 LightGBM 路径均能保持后端响应结构稳定。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证和 `/api/predict` 轻量联调验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入和后端接口调用均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证和 `/api/predict` 轻量联调验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退和后端接口调用均符合本阶段交付要求。
 
 ## 注意事项
 
-- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退和 `/api/predict` 最小 HTTP 联调，尚未覆盖前端 Streamlit 页面到后端接口的完整人工联调流程。
+- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退、LightGBM 异常回退和 `/api/predict` 最小 HTTP 联调，尚未覆盖前端 Streamlit 页面到后端接口的完整人工联调流程。
 - 本地 `tests/ffmpeg.zip` 与 `tests/ffmpeg_tmp/` 已加入 `.gitignore`，不会进入后续提交。
 - 后续如数据负责人提供 `daily_sales_for_forecast.csv`，建议继续补充基于每日聚合表的集成测试。

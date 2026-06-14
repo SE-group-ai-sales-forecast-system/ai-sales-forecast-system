@@ -69,14 +69,23 @@
   - 后端预测服务在未上传数据时默认读取 `data/raw/global_ecommerce_sales.csv`。
   - 从项目根目录或 `backend/` 目录调用预测服务时，都能返回真实数据驱动的预测结果。
   - 已补充 `/api/predict` TestClient 轻量联调测试。
+- 已完成 6/14 预测接口契约稳固：
+  - PR #16 `fix(算法): 完善预测服务默认真实数据源` 已合入 `develop`。
+  - 从最新 `develop` 新建 `feature/algorithm-a-0614-predict-contract-validation`。
+  - 在算法B LightGBM 合入后，加固 `PredictService` 的 LightGBM 调用路径。
+  - 当 LightGBM 不可导入、预测抛错或返回异常结构时，预测服务会回退到算法A移动平均基线模型。
+  - `/api/predict` 已覆盖默认 `model_type`、显式 `baseline` 和显式 `lightgbm` 请求。
+  - 已验证 7、14、30 天预测长度和未知类别兼容结构。
 
 ### 当前分支与 PR 状态
 
 - 基线模型功能分支 `feature/baseline-forecast` 已通过 PR 合入 `develop`。
 - 真实数据验证分支 `feature/algorithm-a-real-data-validation` 已通过 PR #15 合入 `develop`。
-- 当前后续稳固分支：`feature/algorithm-a-predict-api-integration`。
+- 预测接口默认真实数据源分支 `feature/algorithm-a-predict-api-integration` 已通过 PR #16 合入 `develop`。
+- 当前后续稳固分支：`feature/algorithm-a-0614-predict-contract-validation`。
+- 当前后续稳固 PR：#18 `fix(算法): 稳固预测接口模型回退逻辑`，目标分支为 `develop`。
 - 目标合并分支：`develop`。
-- 当前分支用于补充 6/13 后端预测接口默认真实数据源、HTTP 轻量联调测试、测试报告更新和算法A上下文更新。
+- 当前分支用于补充 6/14 LightGBM 与算法A基线共存后的预测接口契约验证、异常回退测试、测试报告更新和算法A上下文更新。
 
 ## 4. 具体开发计划
 
@@ -96,14 +105,18 @@
 12. 完成后端预测服务默认真实 CSV 数据源回退。
 13. 补充 `/api/predict` 轻量联调测试。
 14. 记录 6/13 预测接口联调验证结果。
+15. 从最新 `develop` 新建 `feature/algorithm-a-0614-predict-contract-validation` 分支。
+16. 加固 LightGBM 预测调用，异常或返回结构错误时回退到移动平均基线模型。
+17. 补充默认模型、显式 LightGBM、显式 baseline、7/14/30 天和未知类别测试。
+18. 记录 6/14 预测接口契约稳固验证结果。
 
 ### 后续建议计划
 
-1. 等待 PR 审查，并根据 review comments 修改。
-2. 数据负责人提交真实销售数据后，补充基于真实数据的集成测试。
+1. 等待 6/14 预测接口契约稳固 PR 审查，并根据 review comments 修改。
+2. 与后端和前端成员确认 `/api/predict` 字段不再变更，便于预测页和库存预警页调用。
 3. 为移动平均模型补充误差评估指标，例如 MAE、RMSE 或 MAPE。
 4. 准备“真实销量 vs 移动平均预测”的可视化结果，服务答辩展示。
-5. 与后端成员确认预测接口字段、异常返回和前端展示格式。
+5. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
 6. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
 
 ## 5. 必须严格遵守的协作规范
@@ -128,7 +141,7 @@
 ```powershell
 git checkout develop
 git pull origin develop
-git checkout feature/baseline-forecast
+git checkout feature/algorithm-a-0614-predict-contract-validation
 git status --short --branch
 ```
 
