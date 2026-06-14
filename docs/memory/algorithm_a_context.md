@@ -83,6 +83,7 @@
 - 真实数据验证分支 `feature/algorithm-a-real-data-validation` 已通过 PR #15 合入 `develop`。
 - 预测接口默认真实数据源分支 `feature/algorithm-a-predict-api-integration` 已通过 PR #16 合入 `develop`。
 - 当前后续稳固分支：`feature/algorithm-a-0614-predict-contract-validation`。
+- 当前后续稳固 PR：#18 `fix(算法): 稳固预测接口模型回退逻辑`，目标分支为 `develop`。
 - 目标合并分支：`develop`。
 - 当前分支用于补充 6/14 LightGBM 与算法A基线共存后的预测接口契约验证、异常回退测试、测试报告更新和算法A上下文更新。
 
