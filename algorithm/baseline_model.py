@@ -1,7 +1,8 @@
 """Baseline forecasting model for Algorithm A.
 
-The model intentionally keeps the first implementation simple and stable:
-it predicts future sales with a moving average over recent historical sales.
+The model intentionally keeps the implementation simple and stable:
+it predicts future sales with a moving average by default, and can also
+use simple exponential smoothing as a conservative backup strategy.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from typing import Any, Iterable
 
 
 class BaselinePredictor:
-    """Moving-average baseline predictor.
+    """Stable baseline predictor for Algorithm A.
 
     Supported input shapes:
     - raw order records with ``Order_Date``, ``Product_Category`` or
@@ -23,9 +24,20 @@ class BaselinePredictor:
     - a CSV file path with either of the above schemas
     """
 
-    def __init__(self, data: Any | None = None, window: int = 7):
+    MOVING_AVERAGE = "moving_average"
+    EXPONENTIAL_SMOOTHING = "exponential_smoothing"
+
+    def __init__(
+        self,
+        data: Any | None = None,
+        window: int = 7,
+        strategy: str = MOVING_AVERAGE,
+        alpha: float = 0.2,
+    ):
         self.data = data
-        self.window = max(1, int(window))
+        self.window = self._safe_positive_int(window, default=7)
+        self.strategy = self._normalize_strategy(strategy)
+        self.alpha = self._normalize_alpha(alpha)
 
     def predict(
         self,
@@ -33,6 +45,8 @@ class BaselinePredictor:
         days: int = 7,
         data: Any | None = None,
         window: int | None = None,
+        strategy: str | None = None,
+        alpha: float | None = None,
     ) -> dict[str, list[Any]]:
         """Predict future sales for ``product_id``.
 
@@ -40,16 +54,23 @@ class BaselinePredictor:
         ``{"dates": [...], "sales": [...]}``.
         """
 
-        horizon = max(1, int(days))
+        horizon = self._safe_positive_int(days, default=7)
         rows = self._normalize_rows(data if data is not None else self.data)
         series = self._build_daily_series(rows, product_id)
-        forecast_window = max(1, int(window or self.window))
+        forecast_window = self._safe_positive_int(window, default=self.window)
+        forecast_strategy = self._normalize_strategy(strategy or self.strategy)
+        smoothing_alpha = self._normalize_alpha(
+            self.alpha if alpha is None else alpha
+        )
 
         if series:
             last_date = max(series)
-            recent_values = [series[day] for day in sorted(series)[-forecast_window:]]
-            fallback_values = list(series.values())
-            forecast_value = self._safe_average(recent_values, fallback_values)
+            values = [series[day] for day in sorted(series)]
+            if forecast_strategy == self.EXPONENTIAL_SMOOTHING:
+                forecast_value = self._exponential_smoothing(values, smoothing_alpha)
+            else:
+                recent_values = values[-forecast_window:]
+                forecast_value = self._safe_average(recent_values, values)
         else:
             last_date = datetime.now().date()
             forecast_value = 0.0
@@ -162,3 +183,30 @@ class BaselinePredictor:
         if not usable_values:
             return 0.0
         return sum(usable_values) / len(usable_values)
+
+    def _exponential_smoothing(self, values: list[float], alpha: float) -> float:
+        if not values:
+            return 0.0
+
+        level = values[0]
+        for actual in values[1:]:
+            level = alpha * actual + (1 - alpha) * level
+        return level
+
+    def _normalize_strategy(self, strategy: str | None) -> str:
+        if strategy == self.EXPONENTIAL_SMOOTHING:
+            return self.EXPONENTIAL_SMOOTHING
+        return self.MOVING_AVERAGE
+
+    def _normalize_alpha(self, alpha: float) -> float:
+        try:
+            parsed_alpha = float(alpha)
+        except (TypeError, ValueError):
+            return 0.2
+        return min(1.0, max(0.0, parsed_alpha))
+
+    def _safe_positive_int(self, value: Any, default: int) -> int:
+        try:
+            return max(1, int(value))
+        except (TypeError, ValueError):
+            return max(1, int(default))
