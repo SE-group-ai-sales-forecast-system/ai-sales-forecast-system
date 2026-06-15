@@ -91,6 +91,7 @@
 - 预测接口默认真实数据源分支 `feature/algorithm-a-predict-api-integration` 已通过 PR #16 合入 `develop`。
 - 预测接口契约稳固分支 `feature/algorithm-a-0614-predict-contract-validation` 已通过 PR #18 合入 `develop`。
 - 当前开发分支：`feature/algorithm-a-0615-forecast-evaluation-smoothing`。
+- 当前开发 PR：#21 `feat(算法): 增加预测误差评估与指数平滑备选`，目标分支为 `develop`。
 - 当前开发任务：6/15 预测误差评估、简单指数平滑备选、库存预警链路预测调用验证。
 - 目标合并分支：`develop`。
 
