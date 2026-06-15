@@ -1,6 +1,8 @@
 import unittest
 from datetime import datetime
 from pathlib import Path
+from algorithm.inventory_warning import compute_inventory_warnings
+from algorithm.lightgbm_model import LightGBMPredictor
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -320,6 +322,28 @@ class BaselinePredictorTest(unittest.TestCase):
 
         return response
 
+
+class AlgorithmBTest(unittest.TestCase):
+    def setUp(self):
+        self.rows = [
+            {"ds": f"2026-05-{day:02d}", "category": "Technology", "y": 10}
+            for day in range(1, 31)
+        ]
+    def test_inventory_warning_detects_shortage(self):
+        def fake_predict(category, days):
+            return {"dates": ["x"] * days, "sales": [100.0] * days}
+        warnings = compute_inventory_warnings(self.rows, predict_fn=fake_predict)
+        tech = next(w for w in warnings if w["product_id"] == "Technology")
+        # 日均10 × 14 = 140；预测700 × 1.2 = 840 → 库存不足
+        self.assertEqual(tech["status"], "库存不足")
+        self.assertGreater(tech["suggested_order"], 0)
+    def test_lightgbm_predict_output_shape(self):
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+        predictor = LightGBMPredictor(csv_path)
+        result = predictor.predict("Technology", days=7)
+        self.assertEqual(len(result["dates"]), 7)
+        self.assertEqual(len(result["sales"]), 7)
+        self.assertTrue(all(v >= 0 for v in result["sales"]))
 
 if __name__ == "__main__":
     unittest.main()
