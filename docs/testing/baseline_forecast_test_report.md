@@ -2,12 +2,14 @@
 
 ## 基本信息
 
-- 测试日期：2026-06-11、2026-06-13、2026-06-14
-- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`
-- 测试对象：算法A移动平均基线预测模型
+- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15
+- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`
+- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略和预测误差评估
 - 相关模块：
   - `algorithm/baseline_model.py`
+  - `algorithm/evaluation.py`
   - `backend/services/predict_service.py`
+  - `algorithm/inventory_warning.py`
   - `tests/test_algorithm.py`
 
 ## 本地测试环境
@@ -37,6 +39,10 @@
 - `/api/predict` 是否能在默认 `model_type="lightgbm"`、显式 `baseline` 和显式 `lightgbm` 三种请求下保持响应结构稳定
 - 预测接口是否支持 7、14、30 天预测长度
 - 未知类别是否不会导致预测服务崩溃，并保持后端兼容结构
+- 简单指数平滑策略是否保持日期连续、销量非负、长度正确
+- `alpha` 边界值或异常值是否不会导致预测崩溃
+- 真实 CSV 上是否能输出移动平均与指数平滑的一步预测 MAE 对比表
+- 库存预警引擎是否能通过 `PredictService` 调用算法A预测结果
 - 在无历史数据时，预测接口是否仍返回后端兼容结构：`{"dates": [...], "sales": [...]}`
 
 ## 执行命令与结果
@@ -82,10 +88,10 @@ python -m pytest tests --collect-only -q
 结果：
 
 ```text
-17 tests collected
+21 tests collected
 ```
 
-结论：pytest 能正常发现算法与后端预测接口相关测试用例，共收集 17 项。
+结论：pytest 能正常发现算法、预测接口、评估和库存预警联调相关测试用例，共收集 21 项。
 
 ### 4. pytest 详细执行
 
@@ -98,7 +104,7 @@ python -m pytest tests/test_algorithm.py -vv
 结果：
 
 ```text
-17 passed, 1 warning, 3 subtests passed
+21 passed, 1 warning, 8 subtests passed in 3.75s
 ```
 
 结论：算法单元测试全部通过。
@@ -115,7 +121,7 @@ python -m pytest tests -q
 
 ```text
 .................                                                     [100%]
-17 passed, 1 warning, 3 subtests passed in 1.72s
+21 passed, 1 warning, 8 subtests passed in 3.99s
 ```
 
 结论：当前 tests 目录下可执行的 pytest 测试全部通过；警告为 FastAPI TestClient 依赖链中的 Starlette/httpx 弃用提示，不影响预测接口验证。
@@ -131,7 +137,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 结果：
 
 ```text
-Ran 17 tests
+Ran 21 tests
 
 OK
 ```
@@ -234,12 +240,53 @@ python -c "from backend.services.predict_service import PredictService; print(Pr
 
 结论：6/14 算法A已完成与算法B LightGBM 合入后的预测接口契约稳固；默认模型路径、显式基线路径和显式 LightGBM 路径均能保持后端响应结构稳定。
 
+### 13. 6/15 预测误差评估与指数平滑备选验证
+
+验证内容：
+
+- `BaselinePredictor` 默认仍使用 `moving_average`，不改变后端 `/api/predict` 公共契约。
+- 显式传入 `strategy="exponential_smoothing"` 时，仍返回 `{"dates": [...], "sales": [...]}`。
+- `alpha` 为边界值或异常值时不会导致预测崩溃。
+- `algorithm.evaluation` 可基于真实 CSV 输出各品类移动平均与简单指数平滑的一步预测 MAE。
+- 算法B `compute_inventory_warnings` 可通过 `PredictService` 调用算法A预测结果，返回非负库存、预测需求和建议补货量。
+
+评估命令：
+
+```powershell
+python -m algorithm.evaluation
+```
+
+结果：
+
+```text
+| Category | Observations | Moving Average MAE | Exponential Smoothing MAE | Best Strategy |
+|---|---:|---:|---:|---|
+| Clothing & Accessories | 1088 | 2.0970 | 2.0977 | moving_average |
+| Furniture | 1091 | 2.2392 | 2.2421 | moving_average |
+| Office Supplies | 1092 | 2.1876 | 2.1583 | exponential_smoothing |
+| Technology | 1094 | 2.4630 | 2.4485 | exponential_smoothing |
+```
+
+最小手工验证命令：
+
+```powershell
+python -c "from algorithm.baseline_model import BaselinePredictor; print(BaselinePredictor('data/raw/global_ecommerce_sales.csv', strategy='exponential_smoothing').predict('Technology', 7))"
+```
+
+结果：
+
+```text
+{'dates': ['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04', '2026-01-05', '2026-01-06', '2026-01-07'], 'sales': [1.68, 1.68, 1.68, 1.68, 1.68, 1.68, 1.68]}
+```
+
+结论：6/15 算法A已具备移动平均与简单指数平滑的基础对比能力。真实数据上指数平滑在 `Office Supplies` 和 `Technology` 上略优，移动平均在另外两个品类上略优，因此当前保持移动平均为默认策略，指数平滑作为内部备选和答辩评估材料更稳妥。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证和 `/api/predict` 轻量联调验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退和后端接口调用均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估和库存预警链路最小联调验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用和预警链路预测调用均符合本阶段交付要求。
 
 ## 注意事项
 
-- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退、LightGBM 异常回退和 `/api/predict` 最小 HTTP 联调，尚未覆盖前端 Streamlit 页面到后端接口的完整人工联调流程。
+- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退、LightGBM 异常回退、`/api/predict` 最小 HTTP 联调、预测误差评估和库存预警预测调用，尚未覆盖前端 Streamlit 页面到后端接口的完整人工联调流程。
 - 本地 `tests/ffmpeg.zip` 与 `tests/ffmpeg_tmp/` 已加入 `.gitignore`，不会进入后续提交。
 - 后续如数据负责人提供 `daily_sales_for_forecast.csv`，建议继续补充基于每日聚合表的集成测试。

@@ -71,21 +71,28 @@
   - 已补充 `/api/predict` TestClient 轻量联调测试。
 - 已完成 6/14 预测接口契约稳固：
   - PR #16 `fix(算法): 完善预测服务默认真实数据源` 已合入 `develop`。
+  - PR #18 `fix(算法): 稳固预测接口模型回退逻辑` 已合入 `develop`。
   - 从最新 `develop` 新建 `feature/algorithm-a-0614-predict-contract-validation`。
   - 在算法B LightGBM 合入后，加固 `PredictService` 的 LightGBM 调用路径。
   - 当 LightGBM 不可导入、预测抛错或返回异常结构时，预测服务会回退到算法A移动平均基线模型。
   - `/api/predict` 已覆盖默认 `model_type`、显式 `baseline` 和显式 `lightgbm` 请求。
   - 已验证 7、14、30 天预测长度和未知类别兼容结构。
+- 已完成 6/15 预测误差评估与指数平滑备选：
+  - 从最新 `develop` 新建 `feature/algorithm-a-0615-forecast-evaluation-smoothing`。
+  - `BaselinePredictor` 默认仍保持 `moving_average`，新增显式 `strategy="exponential_smoothing"` 备选。
+  - 新增 `algorithm/evaluation.py`，可基于真实 CSV 输出各品类移动平均与简单指数平滑的一步预测 MAE。
+  - 真实 CSV 评估结果显示 `Office Supplies` 和 `Technology` 上指数平滑略优，另外两个品类移动平均略优。
+  - 已补充算法B库存预警引擎通过 `PredictService` 调用算法A预测结果的最小联调测试。
 
 ### 当前分支与 PR 状态
 
 - 基线模型功能分支 `feature/baseline-forecast` 已通过 PR 合入 `develop`。
 - 真实数据验证分支 `feature/algorithm-a-real-data-validation` 已通过 PR #15 合入 `develop`。
 - 预测接口默认真实数据源分支 `feature/algorithm-a-predict-api-integration` 已通过 PR #16 合入 `develop`。
-- 当前后续稳固分支：`feature/algorithm-a-0614-predict-contract-validation`。
-- 当前后续稳固 PR：#18 `fix(算法): 稳固预测接口模型回退逻辑`，目标分支为 `develop`。
+- 预测接口契约稳固分支 `feature/algorithm-a-0614-predict-contract-validation` 已通过 PR #18 合入 `develop`。
+- 当前开发分支：`feature/algorithm-a-0615-forecast-evaluation-smoothing`。
+- 当前开发任务：6/15 预测误差评估、简单指数平滑备选、库存预警链路预测调用验证。
 - 目标合并分支：`develop`。
-- 当前分支用于补充 6/14 LightGBM 与算法A基线共存后的预测接口契约验证、异常回退测试、测试报告更新和算法A上下文更新。
 
 ## 4. 具体开发计划
 
@@ -109,15 +116,19 @@
 16. 加固 LightGBM 预测调用，异常或返回结构错误时回退到移动平均基线模型。
 17. 补充默认模型、显式 LightGBM、显式 baseline、7/14/30 天和未知类别测试。
 18. 记录 6/14 预测接口契约稳固验证结果。
+19. 从最新 `develop` 新建 `feature/algorithm-a-0615-forecast-evaluation-smoothing` 分支。
+20. 为 `BaselinePredictor` 增加简单指数平滑备选策略，并保持移动平均为默认策略。
+21. 新增真实 CSV 预测误差评估模块，输出移动平均与指数平滑 MAE 对比表。
+22. 补充库存预警引擎接入算法A预测结果的最小联调测试。
+23. 记录 6/15 预测评估与指数平滑验证结果。
 
 ### 后续建议计划
 
-1. 等待 6/14 预测接口契约稳固 PR 审查，并根据 review comments 修改。
+1. 等待 6/15 预测评估与指数平滑 PR 审查，并根据 review comments 修改。
 2. 与后端和前端成员确认 `/api/predict` 字段不再变更，便于预测页和库存预警页调用。
-3. 为移动平均模型补充误差评估指标，例如 MAE、RMSE 或 MAPE。
-4. 准备“真实销量 vs 移动平均预测”的可视化结果，服务答辩展示。
-5. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
-6. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
+3. 准备“真实销量 vs 移动平均预测/指数平滑预测”的可视化结果，服务答辩展示。
+4. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
+5. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
 
 ## 5. 必须严格遵守的协作规范
 
@@ -140,25 +151,26 @@
 
 ```powershell
 git checkout develop
-git pull origin develop
-git checkout feature/algorithm-a-0614-predict-contract-validation
+git pull --ff-only origin develop
+git checkout feature/algorithm-a-0615-forecast-evaluation-smoothing
 git status --short --branch
 ```
 
 ```powershell
 python -m compileall -q algorithm backend tests
+python -m algorithm.evaluation
 python -m pytest tests -q
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ```powershell
-python -c "from algorithm.baseline_model import BaselinePredictor; print(BaselinePredictor().predict('Technology', 7))"
+python -c "from algorithm.baseline_model import BaselinePredictor; print(BaselinePredictor('data/raw/global_ecommerce_sales.csv', strategy='exponential_smoothing').predict('Technology', 7))"
 ```
 
 ## 7. 后续继续工作时的优先级
 
 1. 优先保证当前 PR 与 `develop` 不冲突。
 2. 优先响应 PR 审查意见。
-3. 优先补充真实数据接入后的测试，而不是提前实现复杂模型。
+3. 优先补充真实数据接入后的测试与评估展示，而不是提前实现复杂模型。
 4. 优先保持算法A接口稳定，避免影响后端和前端协作。
 5. 优先记录关键测试结果和设计理由，方便最终答辩。

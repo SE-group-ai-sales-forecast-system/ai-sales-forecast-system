@@ -9,6 +9,8 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.append(str(BACKEND_DIR))
 
 from algorithm.baseline_model import BaselinePredictor
+from algorithm.evaluation import evaluate_baseline_strategies, format_markdown_table
+from algorithm.inventory_warning import compute_inventory_warnings
 from backend.services.predict_service import PredictService
 
 
@@ -87,6 +89,36 @@ class BaselinePredictorTest(unittest.TestCase):
 
         self.assertEqual(result["sales"], [5.0])
 
+    def test_exponential_smoothing_strategy_keeps_contract(self):
+        predictor = BaselinePredictor(
+            self.rows,
+            strategy="exponential_smoothing",
+            alpha=0.5,
+        )
+
+        result = predictor.predict("Technology", days=3)
+
+        self.assertEqual(result["dates"][0], "2026-06-04")
+        self.assertEqual(len(result["dates"]), 3)
+        self.assertEqual(len(result["sales"]), 3)
+        self.assertEqual(result["sales"], [22.5, 22.5, 22.5])
+        self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_exponential_smoothing_alpha_boundaries_do_not_crash(self):
+        for alpha in (-1, 0, 1, 2, "bad"):
+            with self.subTest(alpha=alpha):
+                predictor = BaselinePredictor(
+                    self.rows,
+                    strategy="exponential_smoothing",
+                    alpha=alpha,
+                )
+
+                result = predictor.predict("Technology", days="bad")
+
+                self.assertEqual(len(result["dates"]), 7)
+                self.assertEqual(len(result["sales"]), 7)
+                self.assertTrue(all(value >= 0 for value in result["sales"]))
+
     def test_predict_with_real_raw_csv(self):
         csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
         predictor = BaselinePredictor(csv_path, window=7)
@@ -98,6 +130,27 @@ class BaselinePredictorTest(unittest.TestCase):
         self.assertEqual(result["dates"][0], "2026-01-01")
         self.assertTrue(all(isinstance(value, float) for value in result["sales"]))
         self.assertTrue(all(value >= 0 for value in result["sales"]))
+
+    def test_evaluation_reports_real_csv_mae_by_category(self):
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+
+        results = evaluate_baseline_strategies(csv_path, window=7, alpha=0.2)
+        table = format_markdown_table(results)
+
+        self.assertGreaterEqual(len(results), 4)
+        self.assertIn("Technology", {row["category"] for row in results})
+        self.assertIn("| Category |", table)
+        for row in results:
+            self.assertGreater(row["observations"], 0)
+            self.assertGreaterEqual(row["moving_average_mae"], 0)
+            self.assertGreaterEqual(row["exponential_smoothing_mae"], 0)
+            self.assertIn(
+                row["best_strategy"],
+                {
+                    BaselinePredictor.MOVING_AVERAGE,
+                    BaselinePredictor.EXPONENTIAL_SMOOTHING,
+                },
+            )
 
     def test_predict_service_falls_back_to_baseline_when_lightgbm_missing(self):
         service = PredictService()
@@ -224,6 +277,27 @@ class BaselinePredictorTest(unittest.TestCase):
         self.assertEqual(len(body["predicted_dates"]), 14)
         self.assertEqual(len(body["predicted_sales"]), 14)
         self.assertTrue(all(value >= 0 for value in body["predicted_sales"]))
+
+    def test_inventory_warning_can_use_predict_service_forecast(self):
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+        service = PredictService()
+
+        warnings = compute_inventory_warnings(
+            csv_path,
+            predict_fn=lambda category, days: service.predict(category, days, "baseline"),
+        )
+
+        self.assertGreaterEqual(len(warnings), 4)
+        for item in warnings:
+            self.assertIn("product_id", item)
+            self.assertIn("product_name", item)
+            self.assertIn("current_stock", item)
+            self.assertIn("predicted_demand", item)
+            self.assertIn("suggested_order", item)
+            self.assertGreaterEqual(item["current_stock"], 0)
+            self.assertGreaterEqual(item["predicted_demand"], 0)
+            self.assertGreaterEqual(item["suggested_order"], 0)
+            self.assertIn(item["status"], {"库存不足", "正常"})
 
     def _post_predict(self, payload):
         try:
