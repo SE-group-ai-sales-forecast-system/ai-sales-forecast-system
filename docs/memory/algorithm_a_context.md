@@ -98,6 +98,7 @@
 - 预测接口契约稳固分支 `feature/algorithm-a-0614-predict-contract-validation` 已通过 PR #18 合入 `develop`。
 - 预测误差评估与指数平滑分支 `feature/algorithm-a-0615-forecast-evaluation-smoothing` 已通过 PR #21 合入 `develop`。
 - 当前开发分支：`feature/algorithm-a-0616-testing-bugfix-evaluation-report`。
+- 当前开发 PR：#23 `test(算法): 补充预测链路测试与模型评估记录`，目标分支为 `develop`。
 - 当前开发任务：6/16 测试与 Bug 修复、异常 `days` 输入稳固、模型评估报告补强。
 - 目标合并分支：`develop`。
 
