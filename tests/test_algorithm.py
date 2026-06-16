@@ -1,8 +1,6 @@
 import unittest
 from datetime import datetime
 from pathlib import Path
-from algorithm.inventory_warning import compute_inventory_warnings
-from algorithm.lightgbm_model import LightGBMPredictor
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -14,6 +12,13 @@ from algorithm.baseline_model import BaselinePredictor
 from algorithm.evaluation import evaluate_baseline_strategies, format_markdown_table
 from algorithm.inventory_warning import compute_inventory_warnings
 from backend.services.predict_service import PredictService
+
+try:
+    from algorithm.lightgbm_model import LightGBMPredictor
+except ModuleNotFoundError as exc:
+    if exc.name != "lightgbm":
+        raise
+    LightGBMPredictor = None
 
 
 class BaselinePredictorTest(unittest.TestCase):
@@ -188,6 +193,18 @@ class BaselinePredictorTest(unittest.TestCase):
                 self.assertEqual(result["dates"][0], "2026-01-01")
                 self.assertTrue(all(value >= 0 for value in result["sales"]))
 
+    def test_predict_service_normalizes_invalid_days_input(self):
+        service = PredictService()
+
+        for bad_days in (0, -3, 2.5, True, "bad", None):
+            with self.subTest(days=bad_days):
+                result = service.predict("Technology", bad_days, "baseline")
+
+                self.assertEqual(result["dates"][0], "2026-01-01")
+                self.assertEqual(len(result["dates"]), 7)
+                self.assertEqual(len(result["sales"]), 7)
+                self.assertTrue(all(value >= 0 for value in result["sales"]))
+
     def test_predict_service_unknown_category_keeps_contract(self):
         service = PredictService()
 
@@ -337,6 +354,8 @@ class AlgorithmBTest(unittest.TestCase):
         # 日均10 × 14 = 140；预测700 × 1.2 = 840 → 库存不足
         self.assertEqual(tech["status"], "库存不足")
         self.assertGreater(tech["suggested_order"], 0)
+
+    @unittest.skipIf(LightGBMPredictor is None, "lightgbm is not installed")
     def test_lightgbm_predict_output_shape(self):
         csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
         predictor = LightGBMPredictor(csv_path)

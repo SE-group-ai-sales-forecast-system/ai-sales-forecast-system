@@ -33,13 +33,14 @@ class PredictService:
     
     def predict(self, product_id: str, days: int, model_type: str):
         """调用预测模型"""
+        horizon = self._normalize_days(days)
         if model_type == "lightgbm" and self.lightgbm is not None:
             current_data = self._current_or_default_data()
-            result = self._predict_with_lightgbm(product_id, days, current_data)
+            result = self._predict_with_lightgbm(product_id, horizon, current_data)
             if result is not None:
                 return result
 
-        return self._predict_with_baseline(product_id, days)
+        return self._predict_with_baseline(product_id, horizon)
 
     def _predict_with_lightgbm(self, product_id: str, days: int, data):
         """LightGBM 不可用或预测失败时返回 None，由调用方回退基线模型。"""
@@ -67,11 +68,12 @@ class PredictService:
             return False
         dates = result.get("dates")
         sales = result.get("sales")
+        expected_length = self._normalize_days(days)
         return (
             isinstance(dates, list)
             and isinstance(sales, list)
-            and len(dates) == max(1, int(days))
-            and len(sales) == max(1, int(days))
+            and len(dates) == expected_length
+            and len(sales) == expected_length
         )
 
     def _current_or_default_data(self):
@@ -98,17 +100,29 @@ class PredictService:
         if self.default_data_path.exists():
             return self.default_data_path
         return None
+
+    def _normalize_days(self, days, default: int = 7) -> int:
+        if isinstance(days, bool):
+            return default
+        if isinstance(days, int):
+            parsed_days = days
+        elif isinstance(days, str) and days.strip().isdigit():
+            parsed_days = int(days)
+        else:
+            return default
+        return parsed_days if parsed_days > 0 else default
     
     def _empty_predict(self, days: int):
         """稳定的空预测，避免在无模型时返回随机结果。"""
         from datetime import datetime, timedelta
+        horizon = self._normalize_days(days)
         
         dates = [(datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d") 
-                 for i in range(1, days+1)]
+                 for i in range(1, horizon + 1)]
         
         return {
             "dates": dates,
-            "sales": [0.0 for _ in range(days)]
+            "sales": [0.0 for _ in range(horizon)]
         }
 
 predict_service = PredictService()
