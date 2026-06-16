@@ -2,9 +2,9 @@
 
 ## 基本信息
 
-- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15
-- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`
-- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略和预测误差评估
+- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15、2026-06-16
+- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`、`feature/algorithm-a-0616-testing-bugfix-evaluation-report`
+- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略、预测误差评估和预测链路 Bug 修复
 - 相关模块：
   - `algorithm/baseline_model.py`
   - `algorithm/evaluation.py`
@@ -38,11 +38,13 @@
 - `/api/predict` 是否能在测试鉴权替换后返回后端响应结构
 - `/api/predict` 是否能在默认 `model_type="lightgbm"`、显式 `baseline` 和显式 `lightgbm` 三种请求下保持响应结构稳定
 - 预测接口是否支持 7、14、30 天预测长度
+- `PredictService` 直接调用遇到 `days=0`、负数、非整数、非数字或空值时是否稳定回落到 7 天默认预测
 - 未知类别是否不会导致预测服务崩溃，并保持后端兼容结构
 - 简单指数平滑策略是否保持日期连续、销量非负、长度正确
 - `alpha` 边界值或异常值是否不会导致预测崩溃
 - 真实 CSV 上是否能输出移动平均与指数平滑的一步预测 MAE 对比表
 - 库存预警引擎是否能通过 `PredictService` 调用算法A预测结果
+- 本地未安装 LightGBM 依赖时，测试收集是否不会被算法B专项测试阻断
 - 在无历史数据时，预测接口是否仍返回后端兼容结构：`{"dates": [...], "sales": [...]}`
 
 ## 执行命令与结果
@@ -88,10 +90,10 @@ python -m pytest tests --collect-only -q
 结果：
 
 ```text
-21 tests collected
+24 tests collected
 ```
 
-结论：pytest 能正常发现算法、预测接口、评估和库存预警联调相关测试用例，共收集 21 项。
+结论：pytest 能正常发现算法、预测接口、评估、库存预警联调和 6/16 Bug 修复相关测试用例，共收集 24 项。
 
 ### 4. pytest 详细执行
 
@@ -104,10 +106,10 @@ python -m pytest tests/test_algorithm.py -vv
 结果：
 
 ```text
-21 passed, 1 warning, 8 subtests passed in 3.75s
+23 passed, 1 skipped, 1 warning, 14 subtests passed in 2.21s
 ```
 
-结论：算法单元测试全部通过。
+结论：算法A单元测试和预测链路测试全部通过；1 项 LightGBM 专项测试因本地未安装 `lightgbm` 依赖被跳过，不影响算法A回退链路验证。
 
 ### 5. tests 目录级 pytest 执行
 
@@ -120,11 +122,11 @@ python -m pytest tests -q
 结果：
 
 ```text
-.................                                                     [100%]
-21 passed, 1 warning, 8 subtests passed in 3.99s
+.......................s                                     [100%]
+23 passed, 1 skipped, 1 warning, 14 subtests passed in 3.08s
 ```
 
-结论：当前 tests 目录下可执行的 pytest 测试全部通过；警告为 FastAPI TestClient 依赖链中的 Starlette/httpx 弃用提示，不影响预测接口验证。
+结论：当前 tests 目录下可执行的 pytest 测试全部通过；1 项 LightGBM 专项测试因可选依赖缺失跳过；警告为 FastAPI TestClient 依赖链中的 Starlette/httpx 弃用提示，不影响预测接口验证。
 
 ### 6. unittest 兼容验证
 
@@ -137,9 +139,9 @@ python -m unittest discover -s tests -p "test_*.py" -v
 结果：
 
 ```text
-Ran 21 tests
+Ran 24 tests
 
-OK
+OK (skipped=1)
 ```
 
 结论：测试文件仍兼容 Python 标准库 unittest 运行方式。
@@ -281,9 +283,44 @@ python -c "from algorithm.baseline_model import BaselinePredictor; print(Baselin
 
 结论：6/15 算法A已具备移动平均与简单指数平滑的基础对比能力。真实数据上指数平滑在 `Office Supplies` 和 `Technology` 上略优，移动平均在另外两个品类上略优，因此当前保持移动平均为默认策略，指数平滑作为内部备选和答辩评估材料更稳妥。
 
+### 14. 6/16 测试与 Bug 修复验证
+
+验证内容：
+
+- 从最新远端 `develop` 新建 `feature/algorithm-a-0616-testing-bugfix-evaluation-report`，确认 PR #21 已合入后的算法A能力可继续运行。
+- `PredictService` 在直接服务调用中统一规范化 `days`，当传入 `0`、负数、非整数、非数字字符串或空值时，回落到 7 天默认预测，避免 LightGBM 校验或空预测路径抛错。
+- 本地未安装 `lightgbm` 时，算法B LightGBM 专项测试会跳过，算法A预测、回退、接口和库存预警联调测试仍能正常收集和执行。
+- `/api/predict` 公共契约保持不变，请求字段仍为 `product_id`、`days`、`model_type`，响应字段仍为 `product_id`、`predicted_dates`、`predicted_sales`、`confidence_interval`。
+
+模型评估结果：
+
+```text
+| Category | Observations | Moving Average MAE | Exponential Smoothing MAE | Best Strategy |
+|---|---:|---:|---:|---|
+| Clothing & Accessories | 1088 | 2.0970 | 2.0977 | moving_average |
+| Furniture | 1091 | 2.2392 | 2.2421 | moving_average |
+| Office Supplies | 1092 | 2.1876 | 2.1583 | exponential_smoothing |
+| Technology | 1094 | 2.4630 | 2.4485 | exponential_smoothing |
+```
+
+手工验证结果：
+
+```text
+PredictService().predict("Technology", 7, "baseline")
+=> dates 从 2026-01-01 至 2026-01-07，sales 为 [1.14, ...]
+
+PredictService().predict("Technology", 7, "lightgbm")
+=> 本地 LightGBM 依赖缺失时稳定回退，dates 从 2026-01-01 至 2026-01-07，sales 为 [1.14, ...]
+
+PredictService().predict("Technology", "bad", "baseline")
+=> 稳定回落到 7 天预测，dates 从 2026-01-01 至 2026-01-07，sales 为 [1.14, ...]
+```
+
+结论：6/16 算法A完成测试日关键收口。预测服务对异常 `days` 输入更稳健；缺少可选 LightGBM 依赖时，测试收集不再中断；移动平均仍作为默认策略，指数平滑继续作为内部备选和模型评估材料。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估和库存预警链路最小联调验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用和预警链路预测调用均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证和 6/16 异常输入 Bug 修复验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用和直接服务调用异常参数处理均符合本阶段交付要求。
 
 ## 注意事项
 

@@ -83,6 +83,12 @@
   - 新增 `algorithm/evaluation.py`，可基于真实 CSV 输出各品类移动平均与简单指数平滑的一步预测 MAE。
   - 真实 CSV 评估结果显示 `Office Supplies` 和 `Technology` 上指数平滑略优，另外两个品类移动平均略优。
   - 已补充算法B库存预警引擎通过 `PredictService` 调用算法A预测结果的最小联调测试。
+- 已完成 6/16 测试与 Bug 修复收口：
+  - PR #21 `feat(算法): 增加预测误差评估与指数平滑备选` 已合入 `develop`。
+  - 从最新 `develop` 新建 `feature/algorithm-a-0616-testing-bugfix-evaluation-report`。
+  - `PredictService` 直接调用遇到 `days=0`、负数、非整数、非数字或空值时，会稳定回落到 7 天默认预测。
+  - 本地未安装 `lightgbm` 时，算法B LightGBM 专项测试跳过，算法A预测、回退、接口和库存预警测试仍能正常收集执行。
+  - `/api/predict` 公共请求/响应契约保持不变。
 
 ### 当前分支与 PR 状态
 
@@ -90,9 +96,9 @@
 - 真实数据验证分支 `feature/algorithm-a-real-data-validation` 已通过 PR #15 合入 `develop`。
 - 预测接口默认真实数据源分支 `feature/algorithm-a-predict-api-integration` 已通过 PR #16 合入 `develop`。
 - 预测接口契约稳固分支 `feature/algorithm-a-0614-predict-contract-validation` 已通过 PR #18 合入 `develop`。
-- 当前开发分支：`feature/algorithm-a-0615-forecast-evaluation-smoothing`。
-- 当前开发 PR：#21 `feat(算法): 增加预测误差评估与指数平滑备选`，目标分支为 `develop`。
-- 当前开发任务：6/15 预测误差评估、简单指数平滑备选、库存预警链路预测调用验证。
+- 预测误差评估与指数平滑分支 `feature/algorithm-a-0615-forecast-evaluation-smoothing` 已通过 PR #21 合入 `develop`。
+- 当前开发分支：`feature/algorithm-a-0616-testing-bugfix-evaluation-report`。
+- 当前开发任务：6/16 测试与 Bug 修复、异常 `days` 输入稳固、模型评估报告补强。
 - 目标合并分支：`develop`。
 
 ## 4. 具体开发计划
@@ -122,10 +128,14 @@
 21. 新增真实 CSV 预测误差评估模块，输出移动平均与指数平滑 MAE 对比表。
 22. 补充库存预警引擎接入算法A预测结果的最小联调测试。
 23. 记录 6/15 预测评估与指数平滑验证结果。
+24. 从最新 `develop` 新建 `feature/algorithm-a-0616-testing-bugfix-evaluation-report` 分支。
+25. 修复 `PredictService` 直接调用异常 `days` 输入可能导致 LightGBM 校验或空预测路径崩溃的问题。
+26. 调整 LightGBM 专项测试，使本地未安装可选依赖时跳过，不阻断算法A测试收集。
+27. 记录 6/16 测试与 Bug 修复、模型评估和手工预测验证结果。
 
 ### 后续建议计划
 
-1. 等待 6/15 预测评估与指数平滑 PR 审查，并根据 review comments 修改。
+1. 等待 6/16 测试与 Bug 修复 PR 审查，并根据 review comments 修改。
 2. 与后端和前端成员确认 `/api/predict` 字段不再变更，便于预测页和库存预警页调用。
 3. 准备“真实销量 vs 移动平均预测/指数平滑预测”的可视化结果，服务答辩展示。
 4. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
@@ -153,7 +163,7 @@
 ```powershell
 git checkout develop
 git pull --ff-only origin develop
-git checkout feature/algorithm-a-0615-forecast-evaluation-smoothing
+git checkout feature/algorithm-a-0616-testing-bugfix-evaluation-report
 git status --short --branch
 ```
 
