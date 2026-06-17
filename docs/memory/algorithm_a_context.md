@@ -89,6 +89,12 @@
   - `PredictService` 直接调用遇到 `days=0`、负数、非整数、非数字或空值时，会稳定回落到 7 天默认预测。
   - 本地未安装 `lightgbm` 时，算法B LightGBM 专项测试跳过，算法A预测、回退、接口和库存预警测试仍能正常收集执行。
   - `/api/predict` 公共请求/响应契约保持不变。
+- 已完成 6/17 答辩模型对比图准备：
+  - PR #23 `test(算法): 补充预测链路测试与模型评估记录` 已合入 `develop`。
+  - 从最新 `develop` 新建 `feature/algorithm-a-0617-model-comparison-chart`。
+  - 新增 `algorithm/forecast_visualization.py`，可基于真实 CSV 生成最近 60 天实际销量 vs 7 日移动平均一步预测对比图。
+  - 默认图表输出为 `docs/testing/images/moving_average_vs_actual_0617.png`，覆盖 4 个真实品类。
+  - `/api/predict` 公共请求/响应契约保持不变，本轮只新增答辩图表材料和可复现脚本。
 
 ### 当前分支与 PR 状态
 
@@ -97,9 +103,10 @@
 - 预测接口默认真实数据源分支 `feature/algorithm-a-predict-api-integration` 已通过 PR #16 合入 `develop`。
 - 预测接口契约稳固分支 `feature/algorithm-a-0614-predict-contract-validation` 已通过 PR #18 合入 `develop`。
 - 预测误差评估与指数平滑分支 `feature/algorithm-a-0615-forecast-evaluation-smoothing` 已通过 PR #21 合入 `develop`。
-- 当前开发分支：`feature/algorithm-a-0616-testing-bugfix-evaluation-report`。
-- 当前开发 PR：#23 `test(算法): 补充预测链路测试与模型评估记录`，目标分支为 `develop`。
-- 当前开发任务：6/16 测试与 Bug 修复、异常 `days` 输入稳固、模型评估报告补强。
+- 预测链路测试与 Bug 修复分支 `feature/algorithm-a-0616-testing-bugfix-evaluation-report` 已通过 PR #23 合入 `develop`。
+- 当前开发分支：`feature/algorithm-a-0617-model-comparison-chart`。
+- 当前开发 PR：#24 `feat(算法): 增加移动平均对比图生成能力`，目标分支为 `develop`。
+- 当前开发任务：6/17 答辩模型对比图生成、测试报告补充和记忆文件更新。
 - 目标合并分支：`develop`。
 
 ## 4. 具体开发计划
@@ -133,12 +140,16 @@
 25. 修复 `PredictService` 直接调用异常 `days` 输入可能导致 LightGBM 校验或空预测路径崩溃的问题。
 26. 调整 LightGBM 专项测试，使本地未安装可选依赖时跳过，不阻断算法A测试收集。
 27. 记录 6/16 测试与 Bug 修复、模型评估和手工预测验证结果。
+28. 从最新 `develop` 新建 `feature/algorithm-a-0617-model-comparison-chart` 分支。
+29. 新增移动平均 vs 实际销量对比图生成脚本，并生成答辩用 PNG 图表。
+30. 补充图表数据连续性、非负销量和 PNG 文件生成测试。
+31. 记录 6/17 答辩模型对比图验证结果。
 
 ### 后续建议计划
 
-1. 等待 6/16 测试与 Bug 修复 PR 审查，并根据 review comments 修改。
-2. 与后端和前端成员确认 `/api/predict` 字段不再变更，便于预测页和库存预警页调用。
-3. 准备“真实销量 vs 移动平均预测/指数平滑预测”的可视化结果，服务答辩展示。
+1. 等待 6/17 答辩模型对比图 PR 审查，并根据 review comments 修改。
+2. 与组长确认 `docs/testing/images/moving_average_vs_actual_0617.png` 是否可直接放入答辩 PPT。
+3. 与后端和前端成员确认 `/api/predict` 字段不再变更，便于预测页和库存预警页调用。
 4. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
 5. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
 
@@ -164,25 +175,26 @@
 ```powershell
 git checkout develop
 git pull --ff-only origin develop
-git checkout feature/algorithm-a-0616-testing-bugfix-evaluation-report
+git checkout feature/algorithm-a-0617-model-comparison-chart
 git status --short --branch
 ```
 
 ```powershell
 python -m compileall -q algorithm backend tests
 python -m algorithm.evaluation
+python -m algorithm.forecast_visualization
 python -m pytest tests -q
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ```powershell
-python -c "from algorithm.baseline_model import BaselinePredictor; print(BaselinePredictor('data/raw/global_ecommerce_sales.csv', strategy='exponential_smoothing').predict('Technology', 7))"
+python -c "from backend.services.predict_service import PredictService; print(PredictService().predict('Technology', 7, 'baseline'))"
 ```
 
 ## 7. 后续继续工作时的优先级
 
-1. 优先保证当前 PR 与 `develop` 不冲突。
+1. 优先保证当前 6/17 PR 与 `develop` 不冲突。
 2. 优先响应 PR 审查意见。
-3. 优先补充真实数据接入后的测试与评估展示，而不是提前实现复杂模型。
+3. 优先确认答辩图表和模型选择理由能被 PPT 复用，而不是提前实现复杂模型。
 4. 优先保持算法A接口稳定，避免影响后端和前端协作。
 5. 优先记录关键测试结果和设计理由，方便最终答辩。
