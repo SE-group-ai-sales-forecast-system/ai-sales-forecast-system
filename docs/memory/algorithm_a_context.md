@@ -105,7 +105,7 @@
 - 预测误差评估与指数平滑分支 `feature/algorithm-a-0615-forecast-evaluation-smoothing` 已通过 PR #21 合入 `develop`。
 - 预测链路测试与 Bug 修复分支 `feature/algorithm-a-0616-testing-bugfix-evaluation-report` 已通过 PR #23 合入 `develop`。
 - 当前开发分支：`feature/algorithm-a-0617-model-comparison-chart`。
-- 当前开发 PR：待创建，目标分支为 `develop`。
+- 当前开发 PR：#24 `feat(算法): 增加移动平均对比图生成能力`，目标分支为 `develop`。
 - 当前开发任务：6/17 答辩模型对比图生成、测试报告补充和记忆文件更新。
 - 目标合并分支：`develop`。
 
