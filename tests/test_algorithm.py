@@ -2,6 +2,7 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = PROJECT_ROOT / "backend"
@@ -10,6 +11,10 @@ if str(BACKEND_DIR) not in sys.path:
 
 from algorithm.baseline_model import BaselinePredictor
 from algorithm.evaluation import evaluate_baseline_strategies, format_markdown_table
+from algorithm.forecast_visualization import (
+    build_moving_average_comparison,
+    generate_moving_average_chart,
+)
 from algorithm.inventory_warning import compute_inventory_warnings
 from backend.services.predict_service import PredictService
 
@@ -158,6 +163,53 @@ class BaselinePredictorTest(unittest.TestCase):
                     BaselinePredictor.EXPONENTIAL_SMOOTHING,
                 },
             )
+
+    def test_forecast_visualization_builds_recent_category_points(self):
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+
+        comparisons = build_moving_average_comparison(
+            csv_path,
+            window=7,
+            recent_days=60,
+        )
+
+        self.assertEqual(len(comparisons), 4)
+        self.assertIn("Technology", {item["category"] for item in comparisons})
+        for item in comparisons:
+            points = item["points"]
+            self.assertEqual(len(points), 60)
+            parsed_dates = [
+                datetime.strptime(point["date"], "%Y-%m-%d").date()
+                for point in points
+            ]
+            for previous, current in zip(parsed_dates, parsed_dates[1:]):
+                self.assertEqual((current - previous).days, 1)
+            for point in points:
+                self.assertGreaterEqual(point["actual_sales"], 0)
+                self.assertGreaterEqual(point["moving_average_sales"], 0)
+
+        fallback_comparisons = build_moving_average_comparison(
+            csv_path,
+            window="bad",
+            recent_days=0,
+        )
+        self.assertEqual(len(fallback_comparisons[0]["points"]), 60)
+
+    def test_forecast_visualization_generates_non_empty_png(self):
+        csv_path = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+        with TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "moving_average_vs_actual.png"
+
+            generated_path = generate_moving_average_chart(
+                csv_path,
+                output_path=output_path,
+                window=7,
+                recent_days=60,
+            )
+
+            self.assertEqual(generated_path, output_path)
+            self.assertTrue(generated_path.exists())
+            self.assertGreater(generated_path.stat().st_size, 0)
 
     def test_predict_service_falls_back_to_baseline_when_lightgbm_missing(self):
         service = PredictService()

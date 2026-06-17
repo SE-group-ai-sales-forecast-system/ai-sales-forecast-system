@@ -2,14 +2,16 @@
 
 ## 基本信息
 
-- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15、2026-06-16
-- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`、`feature/algorithm-a-0616-testing-bugfix-evaluation-report`
-- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略、预测误差评估和预测链路 Bug 修复
+- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15、2026-06-16、2026-06-17
+- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`、`feature/algorithm-a-0616-testing-bugfix-evaluation-report`、`feature/algorithm-a-0617-model-comparison-chart`
+- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略、预测误差评估、预测链路 Bug 修复和答辩模型对比图
 - 相关模块：
   - `algorithm/baseline_model.py`
   - `algorithm/evaluation.py`
+  - `algorithm/forecast_visualization.py`
   - `backend/services/predict_service.py`
   - `algorithm/inventory_warning.py`
+  - `docs/testing/images/moving_average_vs_actual_0617.png`
   - `tests/test_algorithm.py`
 
 ## 本地测试环境
@@ -43,6 +45,7 @@
 - 简单指数平滑策略是否保持日期连续、销量非负、长度正确
 - `alpha` 边界值或异常值是否不会导致预测崩溃
 - 真实 CSV 上是否能输出移动平均与指数平滑的一步预测 MAE 对比表
+- 真实 CSV 上是否能生成最近 60 天实际销量 vs 7 日移动平均一步预测对比图
 - 库存预警引擎是否能通过 `PredictService` 调用算法A预测结果
 - 本地未安装 LightGBM 依赖时，测试收集是否不会被算法B专项测试阻断
 - 在无历史数据时，预测接口是否仍返回后端兼容结构：`{"dates": [...], "sales": [...]}`
@@ -90,10 +93,10 @@ python -m pytest tests --collect-only -q
 结果：
 
 ```text
-24 tests collected
+26 tests collected
 ```
 
-结论：pytest 能正常发现算法、预测接口、评估、库存预警联调和 6/16 Bug 修复相关测试用例，共收集 24 项。
+结论：pytest 能正常发现算法、预测接口、评估、库存预警联调、6/16 Bug 修复和 6/17 图表生成相关测试用例，共收集 26 项。
 
 ### 4. pytest 详细执行
 
@@ -106,7 +109,7 @@ python -m pytest tests/test_algorithm.py -vv
 结果：
 
 ```text
-23 passed, 1 skipped, 1 warning, 14 subtests passed in 2.21s
+25 passed, 1 skipped, 1 warning, 14 subtests passed in 5.04s
 ```
 
 结论：算法A单元测试和预测链路测试全部通过；1 项 LightGBM 专项测试因本地未安装 `lightgbm` 依赖被跳过，不影响算法A回退链路验证。
@@ -123,7 +126,7 @@ python -m pytest tests -q
 
 ```text
 .......................s                                     [100%]
-23 passed, 1 skipped, 1 warning, 14 subtests passed in 3.08s
+25 passed, 1 skipped, 1 warning, 14 subtests passed in 5.16s
 ```
 
 结论：当前 tests 目录下可执行的 pytest 测试全部通过；1 项 LightGBM 专项测试因可选依赖缺失跳过；警告为 FastAPI TestClient 依赖链中的 Starlette/httpx 弃用提示，不影响预测接口验证。
@@ -139,12 +142,12 @@ python -m unittest discover -s tests -p "test_*.py" -v
 结果：
 
 ```text
-Ran 24 tests
+Ran 26 tests
 
 OK (skipped=1)
 ```
 
-结论：测试文件仍兼容 Python 标准库 unittest 运行方式。
+结论：测试文件仍兼容 Python 标准库 unittest 运行方式，本次运行耗时约 3.32s。
 
 ### 7. 最小导入与预测调用
 
@@ -318,9 +321,37 @@ PredictService().predict("Technology", "bad", "baseline")
 
 结论：6/16 算法A完成测试日关键收口。预测服务对异常 `days` 输入更稳健；缺少可选 LightGBM 依赖时，测试收集不再中断；移动平均仍作为默认策略，指数平滑继续作为内部备选和模型评估材料。
 
+### 15. 6/17 答辩模型对比图验证
+
+验证内容：
+
+- 从最新远端 `develop` 新建 `feature/algorithm-a-0617-model-comparison-chart`，确认 PR #23 已合入后的算法A文档材料继续推进。
+- 新增 `algorithm.forecast_visualization`，基于真实 CSV 构建最近 60 天实际销量与 7 日移动平均一步预测对比数据。
+- 生成 4 个品类的答辩图，默认输出到 `docs/testing/images/moving_average_vs_actual_0617.png`。
+- 图表标题、坐标轴和图例使用英文，避免本地中文字体配置差异影响展示效果。
+- `/api/predict` 公共契约保持不变，本轮只新增答辩图表材料和可复现生成脚本。
+
+图表生成命令：
+
+```powershell
+python -m algorithm.forecast_visualization
+```
+
+结果：
+
+```text
+Generated forecast comparison chart: F:\学习资料\大二下资料\软件工程\软件工程期末实践\实验仓库\ai-sales-forecast-system\docs\testing\images\moving_average_vs_actual_0617.png
+```
+
+图表文件：
+
+![Moving Average Forecast vs Actual Sales](images/moving_average_vs_actual_0617.png)
+
+结论：6/17 算法A已完成答辩用“移动平均 vs 实际销量”模型对比图。图中 4 个品类均包含 `Actual Sales` 与 `7-Day Moving Average` 两条曲线，可用于说明移动平均模型能捕捉短期平均趋势，但面对订单尖峰时会更平滑；因此当前继续保持移动平均作为稳定默认策略，指数平滑作为内部备选和评估材料。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证和 6/16 异常输入 Bug 修复验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用和直接服务调用异常参数处理均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证、6/16 异常输入 Bug 修复验证和 6/17 答辩模型对比图生成验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用、直接服务调用异常参数处理和模型对比图可复现生成均符合本阶段交付要求。
 
 ## 注意事项
 
