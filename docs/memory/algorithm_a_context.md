@@ -115,6 +115,7 @@
 - 答辩模型对比图分支 `feature/algorithm-a-0617-model-comparison-chart` 已通过 PR #24 合入 `develop`。
 - 算法B LightGBM 评估分支 `feature/algorithm-b-evaluation` 已通过 PR #25 合入 `develop`。
 - 当前开发分支：`feature/algorithm-a-0618-final-regression-predict-page`。
+- 当前开发 PR：#26 `test(算法): 完成最终回归并修复预测页交互`，目标分支为 `develop`。
 - 当前开发任务：6/18 最终回归、预测页交互修复、测试报告补充和记忆文件更新。
 - 目标合并分支：`develop`。
 
