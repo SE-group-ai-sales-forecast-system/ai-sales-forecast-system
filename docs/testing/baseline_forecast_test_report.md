@@ -2,15 +2,17 @@
 
 ## 基本信息
 
-- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15、2026-06-16、2026-06-17
-- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`、`feature/algorithm-a-0616-testing-bugfix-evaluation-report`、`feature/algorithm-a-0617-model-comparison-chart`
-- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略、预测误差评估、预测链路 Bug 修复和答辩模型对比图
+- 测试日期：2026-06-11、2026-06-13、2026-06-14、2026-06-15、2026-06-16、2026-06-17、2026-06-18
+- 测试分支：`feature/baseline-forecast`、`feature/algorithm-a-predict-api-integration`、`feature/algorithm-a-0614-predict-contract-validation`、`feature/algorithm-a-0615-forecast-evaluation-smoothing`、`feature/algorithm-a-0616-testing-bugfix-evaluation-report`、`feature/algorithm-a-0617-model-comparison-chart`、`feature/algorithm-a-0618-final-regression-predict-page`
+- 测试对象：算法A移动平均基线预测模型、简单指数平滑备选策略、预测误差评估、预测链路 Bug 修复、答辩模型对比图和预测页最终交互回归
 - 相关模块：
   - `algorithm/baseline_model.py`
   - `algorithm/evaluation.py`
   - `algorithm/forecast_visualization.py`
   - `backend/services/predict_service.py`
   - `algorithm/inventory_warning.py`
+  - `algorithm/lightgbm_evaluation.py`
+  - `frontend/app.py`
   - `docs/testing/images/moving_average_vs_actual_0617.png`
   - `tests/test_algorithm.py`
 
@@ -48,6 +50,9 @@
 - 真实 CSV 上是否能生成最近 60 天实际销量 vs 7 日移动平均一步预测对比图
 - 库存预警引擎是否能通过 `PredictService` 调用算法A预测结果
 - 本地未安装 LightGBM 依赖时，测试收集是否不会被算法B专项测试阻断
+- 本地未安装 LightGBM 依赖时，算法B评估脚本是否给出明确跳过信息而不是崩溃
+- Streamlit 预测页是否能完成登录、选择天数、调用预测接口、展示图表和表格
+- 真实浏览器中预测页是否能完成 7、14、30 天预测交互且无前端错误
 - 在无历史数据时，预测接口是否仍返回后端兼容结构：`{"dates": [...], "sales": [...]}`
 
 ## 执行命令与结果
@@ -349,12 +354,76 @@ Generated forecast comparison chart: F:\学习资料\大二下资料\软件工�
 
 结论：6/17 算法A已完成答辩用“移动平均 vs 实际销量”模型对比图。图中 4 个品类均包含 `Actual Sales` 与 `7-Day Moving Average` 两条曲线，可用于说明移动平均模型能捕捉短期平均趋势，但面对订单尖峰时会更平滑；因此当前继续保持移动平均作为稳定默认策略，指数平滑作为内部备选和评估材料。
 
+### 16. 6/18 最终回归与预测页交互验证
+
+验证内容：
+
+- 从最新 `origin/develop` 新建 `feature/algorithm-a-0618-final-regression-predict-page`，确认 PR #24 和算法B PR #25 已合入后的系统状态。
+- `frontend/app.py` 原为空文件，本轮补充最小 Streamlit 预测页，用于 6/18 完整内测和演示主链路兜底。
+- 预测页支持 `admin/admin123` 或 `user/user123` 登录，登录后调用真实 `/api/predict`。
+- 预测页支持 4 个真实 CSV 品类、7/14/30 天预测、`lightgbm` 和 `baseline` 两种模型入口。
+- `/api/predict` 公共契约保持不变，请求字段仍为 `product_id`、`days`、`model_type`，响应字段仍为 `product_id`、`predicted_dates`、`predicted_sales`、`confidence_interval`。
+- `algorithm.lightgbm_evaluation` 在本地未安装可选依赖 `lightgbm` 时输出明确跳过信息并正常退出，避免最终回归脚本被可选依赖阻断；若依赖存在，评估模型输出写入临时目录，避免污染仓库。
+
+最终自动化命令：
+
+```powershell
+python -m compileall -q algorithm backend frontend tests
+python -m algorithm.evaluation
+python -m algorithm.forecast_visualization
+python -m algorithm.lightgbm_evaluation
+python -m pytest tests -q
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+结果摘要：
+
+```text
+compileall: 退出码 0
+algorithm.evaluation: 成功输出 4 个品类 MAE 对比表
+algorithm.forecast_visualization: 成功生成 docs/testing/images/moving_average_vs_actual_0617.png
+algorithm.lightgbm_evaluation: LightGBM evaluation skipped: optional dependency 'lightgbm' is not installed.
+pytest: 25 passed, 1 skipped, 1 warning, 14 subtests passed in 4.48s
+unittest: Ran 26 tests in 3.582s, OK (skipped=1)
+```
+
+手工接口验证：
+
+```text
+PredictService().predict("Technology", 7, "baseline")
+=> dates 从 2026-01-01 至 2026-01-07，sales 为 [1.14, ...]
+
+PredictService().predict("Technology", 7, "lightgbm")
+=> 本地 LightGBM 依赖缺失时稳定回退，dates 从 2026-01-01 至 2026-01-07，sales 为 [1.14, ...]
+
+FastAPI TestClient 登录 /api/login
+=> admin/admin123 返回 200
+
+携带 Bearer token 调用 /api/predict
+=> baseline 和 lightgbm 均返回 200，响应包含 product_id、predicted_dates、predicted_sales、confidence_interval
+```
+
+真实浏览器交互验证：
+
+```text
+后端：http://localhost:8000/health 返回 {"status":"ok","message":"后端服务运行正常"}
+前端：http://localhost:8501 返回 200
+浏览器登录：admin/admin123 成功
+7 天 + LightGBM：页面显示 Technology 未来 7 天预测已生成，日期 2026-01-01 至 2026-01-07
+14 天 + Baseline：页面显示 Technology 未来 14 天预测已生成，日期 2026-01-01 至 2026-01-14
+30 天 + LightGBM：页面显示 Technology 未来 30 天预测已生成，日期 2026-01-01 至 2026-01-30
+浏览器 error 级别控制台日志：[]
+```
+
+结论：6/18 最终回归未发现阻断演示的致命 bug。算法A预测链路、LightGBM 缺失回退、库存预警联调、评估脚本、答辩图表生成和 Streamlit 预测页真实交互均可运行。预测页当前定位为最小可演示页面，不进行视觉重设计。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证、6/16 异常输入 Bug 修复验证和 6/17 答辩模型对比图生成验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用、直接服务调用异常参数处理和模型对比图可复现生成均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证、6/16 异常输入 Bug 修复验证、6/17 答辩模型对比图生成验证和 6/18 预测页真实浏览器交互验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用、直接服务调用异常参数处理、模型对比图可复现生成和预测页演示主链路均符合本阶段交付要求。
 
 ## 注意事项
 
-- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退、LightGBM 异常回退、`/api/predict` 最小 HTTP 联调、预测误差评估和库存预警预测调用，尚未覆盖前端 Streamlit 页面到后端接口的完整人工联调流程。
+- 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退、LightGBM 异常回退、`/api/predict` 最小 HTTP 联调、预测误差评估、库存预警预测调用和前端 Streamlit 页面到后端接口的真实浏览器联调流程。
+- 本地未安装可选依赖 `lightgbm`，因此 LightGBM 专项测试和评估按预期跳过；算法A基线回退链路已验证可用。
 - 本地 `tests/ffmpeg.zip` 与 `tests/ffmpeg_tmp/` 已加入 `.gitignore`，不会进入后续提交。
 - 后续如数据负责人提供 `daily_sales_for_forecast.csv`，建议继续补充基于每日聚合表的集成测试。

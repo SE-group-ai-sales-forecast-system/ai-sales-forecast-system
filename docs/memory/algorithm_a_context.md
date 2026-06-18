@@ -95,6 +95,14 @@
   - 新增 `algorithm/forecast_visualization.py`，可基于真实 CSV 生成最近 60 天实际销量 vs 7 日移动平均一步预测对比图。
   - 默认图表输出为 `docs/testing/images/moving_average_vs_actual_0617.png`，覆盖 4 个真实品类。
   - `/api/predict` 公共请求/响应契约保持不变，本轮只新增答辩图表材料和可复现脚本。
+- 已完成 6/18 最终回归与预测页交互验证：
+  - PR #24 `feat(算法): 增加移动平均对比图生成能力` 已合入 `develop`。
+  - 算法B PR #25 `feat(算法):新增LightGBM测试报告` 已合入 `develop`，当前回归基线包含算法B LightGBM 评估脚本。
+  - 从最新 `develop` 新建 `feature/algorithm-a-0618-final-regression-predict-page`。
+  - 修复空白 `frontend/app.py`，补充最小 Streamlit 预测页，支持登录、品类选择、7/14/30 天预测、`lightgbm` 和 `baseline` 调用。
+  - `algorithm/lightgbm_evaluation.py` 在本地未安装可选依赖 `lightgbm` 时输出明确跳过信息并正常退出，避免最终回归脚本被阻断。
+  - 真实浏览器验证已覆盖 `admin/admin123` 登录、7 天 LightGBM、14 天 Baseline 和 30 天 LightGBM 预测，预测日期均从 `2026-01-01` 开始。
+  - `/api/predict` 公共请求/响应契约保持不变。
 
 ### 当前分支与 PR 状态
 
@@ -104,9 +112,10 @@
 - 预测接口契约稳固分支 `feature/algorithm-a-0614-predict-contract-validation` 已通过 PR #18 合入 `develop`。
 - 预测误差评估与指数平滑分支 `feature/algorithm-a-0615-forecast-evaluation-smoothing` 已通过 PR #21 合入 `develop`。
 - 预测链路测试与 Bug 修复分支 `feature/algorithm-a-0616-testing-bugfix-evaluation-report` 已通过 PR #23 合入 `develop`。
-- 当前开发分支：`feature/algorithm-a-0617-model-comparison-chart`。
-- 当前开发 PR：#24 `feat(算法): 增加移动平均对比图生成能力`，目标分支为 `develop`。
-- 当前开发任务：6/17 答辩模型对比图生成、测试报告补充和记忆文件更新。
+- 答辩模型对比图分支 `feature/algorithm-a-0617-model-comparison-chart` 已通过 PR #24 合入 `develop`。
+- 算法B LightGBM 评估分支 `feature/algorithm-b-evaluation` 已通过 PR #25 合入 `develop`。
+- 当前开发分支：`feature/algorithm-a-0618-final-regression-predict-page`。
+- 当前开发任务：6/18 最终回归、预测页交互修复、测试报告补充和记忆文件更新。
 - 目标合并分支：`develop`。
 
 ## 4. 具体开发计划
@@ -144,12 +153,17 @@
 29. 新增移动平均 vs 实际销量对比图生成脚本，并生成答辩用 PNG 图表。
 30. 补充图表数据连续性、非负销量和 PNG 文件生成测试。
 31. 记录 6/17 答辩模型对比图验证结果。
+32. 从最新 `develop` 新建 `feature/algorithm-a-0618-final-regression-predict-page` 分支。
+33. 修复空白 Streamlit 预测页，补充登录、预测参数选择、接口调用、图表和表格展示。
+34. 补强 LightGBM 评估脚本的可选依赖缺失处理，避免最终回归崩溃。
+35. 完成 6/18 自动化回归、手工接口验证和真实浏览器预测页交互验证。
+36. 记录 6/18 最终回归与预测页交互验证结果。
 
 ### 后续建议计划
 
-1. 等待 6/17 答辩模型对比图 PR 审查，并根据 review comments 修改。
-2. 与组长确认 `docs/testing/images/moving_average_vs_actual_0617.png` 是否可直接放入答辩 PPT。
-3. 与后端和前端成员确认 `/api/predict` 字段不再变更，便于预测页和库存预警页调用。
+1. 推送 6/18 最终回归分支并创建目标为 `develop` 的 PR。
+2. 与组长确认预测页最小演示版本是否满足 6/18 内测和 6/19 PPT 演示需要。
+3. 与前端/后端成员确认 `/api/predict` 字段不再变更，避免影响预测页和库存预警页。
 4. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
 5. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
 
@@ -175,26 +189,29 @@
 ```powershell
 git checkout develop
 git pull --ff-only origin develop
-git checkout feature/algorithm-a-0617-model-comparison-chart
+git checkout feature/algorithm-a-0618-final-regression-predict-page
 git status --short --branch
 ```
 
 ```powershell
-python -m compileall -q algorithm backend tests
+python -m compileall -q algorithm backend frontend tests
 python -m algorithm.evaluation
 python -m algorithm.forecast_visualization
+python -m algorithm.lightgbm_evaluation
 python -m pytest tests -q
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ```powershell
 python -c "from backend.services.predict_service import PredictService; print(PredictService().predict('Technology', 7, 'baseline'))"
+python -m uvicorn backend.main:app --port 8000
+python -m streamlit run frontend/app.py --server.port 8501
 ```
 
 ## 7. 后续继续工作时的优先级
 
-1. 优先保证当前 6/17 PR 与 `develop` 不冲突。
-2. 优先响应 PR 审查意见。
-3. 优先确认答辩图表和模型选择理由能被 PPT 复用，而不是提前实现复杂模型。
+1. 优先保证当前 6/18 最终回归 PR 与 `develop` 不冲突。
+2. 优先响应 PR 审查意见，尤其是预测页演示流程和 LightGBM 可选依赖处理。
+3. 优先确认预测页、答辩图表和模型选择理由能被 PPT/演示视频复用。
 4. 优先保持算法A接口稳定，避免影响后端和前端协作。
 5. 优先记录关键测试结果和设计理由，方便最终答辩。

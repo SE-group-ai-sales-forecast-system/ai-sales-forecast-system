@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import numpy as np
@@ -89,10 +90,20 @@ def format_lightgbm_markdown_table(results: list[dict[str, Any]]) -> str:
 
 
 def main() -> None:
-    from algorithm.lightgbm_model import LightGBMPredictor
+    try:
+        from algorithm.lightgbm_model import LightGBMPredictor
+    except ModuleNotFoundError as exc:
+        if exc.name == "lightgbm":
+            print("LightGBM evaluation skipped: optional dependency 'lightgbm' is not installed.")
+            return
+        raise
 
-    predictor = LightGBMPredictor(DEFAULT_RAW_DATA_PATH)
-    results = evaluate_lightgbm(predictor)
+    with TemporaryDirectory() as model_dir:
+        predictor = LightGBMPredictor(
+            DEFAULT_RAW_DATA_PATH,
+            model_path=Path(model_dir) / "lightgbm_by_category.pkl",
+        )
+        results = evaluate_lightgbm(predictor)
     print(format_lightgbm_markdown_table(results))
 
 
