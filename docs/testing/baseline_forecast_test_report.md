@@ -417,13 +417,56 @@ FastAPI TestClient 登录 /api/login
 
 结论：6/18 最终回归未发现阻断演示的致命 bug。算法A预测链路、LightGBM 缺失回退、库存预警联调、评估脚本、答辩图表生成和 Streamlit 预测页真实交互均可运行。预测页当前定位为最小可演示页面，不进行视觉重设计。
 
+### 17. 6/19 完成度盘点与答辩材料收口
+
+验证内容：
+
+- 阅读算法A记忆文件、管理排期、测试报告、预测服务、基线模型和预测页代码，确认 6/19 算法A任务应转入答辩材料和可复现说明收口。
+- GitHub 当前状态：PR #26 `test(算法): 完成最终回归并修复预测页交互` 已合入 `develop`；本轮已将 `feature/algorithm-a-0619-model-defense-optimization` 整理到最新 `origin/develop` 之上。
+- 已创建 PR #29 `docs(算法): 补充6月19日模型答辩材料`，目标分支为 `develop`。
+- PR #28 仍处于 open 状态，但经远端 PR ref 验证，其 head commit 为 `20fda89 docs(算法):补充库存预警规则说明与流程图`，只新增 `docs/design/inventory_warning_rules.md`，属于算法B库存预警规则说明，不是算法A 6/19 分支。
+- 新增 `docs/presentation/algorithm_a_model_defense_0619.md`，整理“为什么选择移动平均作为默认模型”的答辩讲稿、MAE 对比、演示话术、局限说明和评委问答。
+- 新增 `docs/presentation/algorithm_a_ppt_outline_0619.md`，整理可直接摘入 5 分钟答辩 PPT 的页级大纲。
+- 轻量更新 README，明确默认稳定模型是 7 日移动平均，指数平滑为内部备选，LightGBM 为增强路径，预测结果不应直接用于真实生产自动决策。
+
+6/19 本地验证命令：
+
+```powershell
+python -m compileall -q algorithm backend frontend tests
+python -m algorithm.evaluation
+python -m algorithm.lightgbm_evaluation
+python -m pytest tests -q
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+结果摘要：
+
+```text
+compileall: 退出码 0
+algorithm.evaluation: 成功输出 4 个品类 MAE 对比表
+algorithm.lightgbm_evaluation: LightGBM evaluation skipped: optional dependency 'lightgbm' is not installed.
+pytest: 25 passed, 1 skipped, 1 warning, 14 subtests passed in 17.80s
+unittest: Ran 26 tests in 3.961s, OK (skipped=1)
+```
+
+完成度判断：
+
+- 算法A代码能力约 95% 完成：预测模型、评估脚本、回退链路、接口测试、图表生成和预测页交互均已具备。
+- 期末考核中算法A交付约 95% 完成：剩余关键事项是创建并合入 6/19 答辩材料 PR、将讲稿/PPT 大纲合入答辩 PPT、在最终提交包中保留真实 CSV 和图表材料。
+- 当前不建议新增 Prophet、SARIMAX 或复杂调参；最终阶段优先保证可讲清、可复现、可演示。
+
+答辩结论：
+
+移动平均模型基于真实 CSV 的历史订单数据计算，不是随机预测；它能稳定输出日期连续、销量非负、长度正确的短期预测结果。当前模型适合课程项目演示、库存预警原型和运营趋势参考，但不能直接作为生产采购自动决策依据。
+
 ## 当前结论
 
-算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证、6/16 异常输入 Bug 修复验证、6/17 答辩模型对比图生成验证和 6/18 预测页真实浏览器交互验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用、直接服务调用异常参数处理、模型对比图可复现生成和预测页演示主链路均符合本阶段交付要求。
+算法A移动平均基线预测模型在当前本地环境下通过语法编译、pytest 收集、pytest 执行、unittest 兼容运行、最小导入调用、真实 CSV 预测、后端回退验证、默认真实数据源验证、`/api/predict` 轻量联调验证、简单指数平滑备选策略验证、真实 CSV 误差评估、库存预警链路最小联调验证、6/16 异常输入 Bug 修复验证、6/17 答辩模型对比图生成验证、6/18 预测页真实浏览器交互验证和 6/19 答辩材料收口验证。当前测试能证明模型基础预测行为、筛选逻辑、日期连续性、缺失日期补 0、非负输出、原始订单格式兼容性、真实数据输入、LightGBM 异常回退、后端接口调用、预警链路预测调用、直接服务调用异常参数处理、模型对比图可复现生成、预测页演示主链路和答辩解释材料均符合本阶段交付要求。
 
 ## 注意事项
 
 - 当前测试已覆盖算法模块核心行为、后端预测服务轻量回退、LightGBM 异常回退、`/api/predict` 最小 HTTP 联调、预测误差评估、库存预警预测调用和前端 Streamlit 页面到后端接口的真实浏览器联调流程。
 - 本地未安装可选依赖 `lightgbm`，因此 LightGBM 专项测试和评估按预期跳过；算法A基线回退链路已验证可用。
 - 本地 `tests/ffmpeg.zip` 与 `tests/ffmpeg_tmp/` 已加入 `.gitignore`，不会进入后续提交。
+- PR #26 已合入 `develop`；当前远端分支 `feature/algorithm-a-0619-model-defense-optimization` 已整理为 6/19 答辩材料分支，并已创建目标为 `develop` 的 PR #29。
 - 后续如数据负责人提供 `daily_sales_for_forecast.csv`，建议继续补充基于每日聚合表的集成测试。

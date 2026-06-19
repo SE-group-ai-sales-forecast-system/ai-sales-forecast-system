@@ -103,6 +103,15 @@
   - `algorithm/lightgbm_evaluation.py` 在本地未安装可选依赖 `lightgbm` 时输出明确跳过信息并正常退出，避免最终回归脚本被阻断。
   - 真实浏览器验证已覆盖 `admin/admin123` 登录、7 天 LightGBM、14 天 Baseline 和 30 天 LightGBM 预测，预测日期均从 `2026-01-01` 开始。
   - `/api/predict` 公共请求/响应契约保持不变。
+- 已完成 6/19 完成度盘点与答辩材料收口：
+  - PR #26 `test(算法): 完成最终回归并修复预测页交互` 已合入 `develop`，远端 `develop` 已包含 6/18 预测页修复。
+  - 当前算法A代码能力约 95% 完成，期末考核中算法A交付约 95% 完成；剩余关键事项是 PR #29 合入、PPT/视频复用材料和最终提交包复现检查。
+  - `feature/algorithm-a-0619-model-defense-optimization` 已基于最新 `origin/develop` 重新整理，当前 diff 只包含 6/19 答辩材料、README、测试报告和记忆文件更新。
+  - 新增 `docs/presentation/algorithm_a_model_defense_0619.md`，整理移动平均默认策略理由、MAE 对比表、LightGBM 回退关系、预测真实性与局限、演示话术和评委问答。
+  - 新增 `docs/presentation/algorithm_a_ppt_outline_0619.md`，提供可直接摘入 5 分钟答辩 PPT 的页级大纲。
+  - README 已补充最终回归命令、模型定位、PPT 材料入口和生产使用边界说明。
+  - 已创建 PR #29 `docs(算法): 补充6月19日模型答辩材料`，目标分支为 `develop`。
+  - `/api/predict` 公共请求/响应契约保持不变，本轮不做视觉重设计、不新增复杂模型。
 
 ### 当前分支与 PR 状态
 
@@ -114,9 +123,11 @@
 - 预测链路测试与 Bug 修复分支 `feature/algorithm-a-0616-testing-bugfix-evaluation-report` 已通过 PR #23 合入 `develop`。
 - 答辩模型对比图分支 `feature/algorithm-a-0617-model-comparison-chart` 已通过 PR #24 合入 `develop`。
 - 算法B LightGBM 评估分支 `feature/algorithm-b-evaluation` 已通过 PR #25 合入 `develop`。
-- 当前开发分支：`feature/algorithm-a-0618-final-regression-predict-page`。
-- 当前开发 PR：#26 `test(算法): 完成最终回归并修复预测页交互`，目标分支为 `develop`。
-- 当前开发任务：6/18 最终回归、预测页交互修复、测试报告补充和记忆文件更新。
+- 最终回归分支 `feature/algorithm-a-0618-final-regression-predict-page` 已通过 PR #26 合入 `develop`。
+- 当前开发分支：`feature/algorithm-a-0619-model-defense-optimization`，已基于最新 `origin/develop` 整理。
+- 当前开发 PR：#29 `docs(算法): 补充6月19日模型答辩材料`，目标分支为 `develop`。
+- 当前打开的 PR #28 是算法B库存预警规则说明 PR，head commit 为 `20fda89 docs(算法):补充库存预警规则说明与流程图`，只新增 `docs/design/inventory_warning_rules.md`，不是算法A 6/19 分支。
+- 当前开发任务：6/19 完成度盘点、模型答辩讲稿、README 运行说明、测试报告和记忆文件更新。
 - 目标合并分支：`develop`。
 
 ## 4. 具体开发计划
@@ -159,14 +170,22 @@
 34. 补强 LightGBM 评估脚本的可选依赖缺失处理，避免最终回归崩溃。
 35. 完成 6/18 自动化回归、手工接口验证和真实浏览器预测页交互验证。
 36. 记录 6/18 最终回归与预测页交互验证结果。
+37. 从 6/18 PR 分支继续新建 `feature/algorithm-a-0619-model-defense-optimization`，确保预测页修复上下文不丢失。
+38. PR #26 合入后，将 6/19 分支重新整理到最新 `origin/develop`，确保后续 PR 只包含 6/19 材料。
+39. 完成算法A 6/19 完成度盘点，明确代码能力约 95% 完成、期末算法A交付约 95% 完成。
+40. 新增模型答辩讲稿和 PPT 页级大纲，整理移动平均默认策略理由、MAE 对比、演示话术和生产使用边界。
+41. 更新 README、测试报告和记忆文件，记录 6/19 验证结果、PR #28 归属和 PR #29 状态。
+42. 创建 PR #29，作为算法A 6/19 答辩材料独立 PR。
 
 ### 后续建议计划
 
-1. 推送 6/18 最终回归分支并创建目标为 `develop` 的 PR。
-2. 与组长确认预测页最小演示版本是否满足 6/18 内测和 6/19 PPT 演示需要。
-3. 与前端/后端成员确认 `/api/predict` 字段不再变更，避免影响预测页和库存预警页。
-4. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试。
-5. 若时间允许，再与复杂模型成员协作比较 LightGBM、Prophet、SARIMAX 等模型效果。
+1. 跟进 PR #29 审查与合入。
+2. PR #28 可由算法B/组长继续处理；算法A无需修改该 PR。
+3. 将 `docs/presentation/algorithm_a_model_defense_0619.md` 和 `docs/presentation/algorithm_a_ppt_outline_0619.md` 中的模型讲稿、MAE 表和 Q&A 摘入 6/19 答辩 PPT。
+4. 与组长确认算法A PPT 页数控制在 2-3 页，完整讲稿作为备用答辩材料。
+5. 与前端/后端成员确认 `/api/predict` 字段不再变更，避免影响预测页和库存预警页。
+6. 最终提交包需确认 `data/raw/global_ecommerce_sales.csv`、`docs/testing/images/moving_average_vs_actual_0617.png`、测试报告和 README 均包含在内。
+7. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试；最终阶段不再新增 Prophet、SARIMAX 或复杂调参。
 
 ## 5. 必须严格遵守的协作规范
 
@@ -190,7 +209,7 @@
 ```powershell
 git checkout develop
 git pull --ff-only origin develop
-git checkout feature/algorithm-a-0618-final-regression-predict-page
+git checkout feature/algorithm-a-0619-model-defense-optimization
 git status --short --branch
 ```
 
@@ -211,8 +230,8 @@ python -m streamlit run frontend/app.py --server.port 8501
 
 ## 7. 后续继续工作时的优先级
 
-1. 优先保证当前 6/18 最终回归 PR 与 `develop` 不冲突。
-2. 优先响应 PR 审查意见，尤其是预测页演示流程和 LightGBM 可选依赖处理。
+1. 优先创建并合入 6/19 答辩材料 PR。
+2. 优先确认 PPT、演示视频和最终提交包都引用最新算法A讲稿与页级大纲。
 3. 优先确认预测页、答辩图表和模型选择理由能被 PPT/演示视频复用。
 4. 优先保持算法A接口稳定，避免影响后端和前端协作。
 5. 优先记录关键测试结果和设计理由，方便最终答辩。

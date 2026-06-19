@@ -8,7 +8,7 @@
 
 ## 📖 项目简介
 
-本项目面向电商运营人员，提供**销售数据分析**、**销量预测**、**库存预警**和**可视化报表**等功能。系统通过机器学习模型（LightGBM + 基线模型）对历史销售数据进行学习，预测未来 7/14/30 天的商品销量，并结合当前库存自动判断库存风险，辅助运营决策。
+本项目面向电商运营人员，提供**销售数据分析**、**销量预测**、**库存预警**和**可视化报表**等功能。系统通过移动平均基线模型与 LightGBM 增强模型对历史销售数据进行预测，支持未来 7/14/30 天销量预测，并结合模拟库存自动判断库存风险，辅助运营决策。
 
 项目采用前后端分离架构，后端提供 RESTful API，前端实现交互看板，算法模块独立封装。整个开发过程遵循软件工程规范，包含完整的需求、设计、测试和项目管理文档。
 
@@ -27,7 +27,7 @@
 | ------------ | ------------------------------------------------------------ |
 | **前端**     | Streamlit（快速原型） / Vue3 + ECharts（可换）                |
 | **后端**     | Python 3.13.12 + FastAPI + Uvicorn                              |
-| **算法**     | Pandas, NumPy, Scikit-learn, LightGBM, Prophet（基线模型）    |
+| **算法**     | Pandas, NumPy, Scikit-learn, LightGBM；默认稳定基线为 7 日移动平均，指数平滑为备选 |
 | **数据库**   | SQLite（开发）/ MySQL（可选）                                |
 | **可视化**   | Plotly, Matplotlib, ECharts                                  |
 | **测试**     | Pytest                                                        |
@@ -151,13 +151,25 @@ pytest tests/
 pytest tests/test_algorithm.py
 ```
 
+最终回归建议命令：
+
+```bash
+python -m compileall -q algorithm backend frontend tests
+python -m algorithm.evaluation
+python -m algorithm.lightgbm_evaluation
+python -m pytest tests -q
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
+说明：`lightgbm` 是可选增强依赖；本地未安装时，LightGBM 专项评估会输出跳过信息，预测接口仍可通过移动平均基线稳定返回结果。
+
 ## 👥 小组分工
 
 | 成员 | 角色         | 主要任务                                                         | 个人产出                                 |
 | ---- | ------------ | ---------------------------------------------------------------- | ---------------------------------------- |
 | [1号](https://github.com/AstonFrwine)  | 项目经理    | 需求收敛、任务分配、进度管理、文档汇总、PPT与汇报组织            | 项目管理文档、甘特图、分工说明、答辩串词 |
 | [2号](https://github.com/ClaytonWs)  | 数据负责人   | 整理电商销售数据、数据清洗、字段字典、数据质量检查               | 数据集、数据说明、清洗代码、质量报告     |
-| [3号](https://github.com/dragon-zhang-woo)  | 算法负责人A  | 基线模型（移动平均/Prophet/SARIMAX）、回测与误差分析             | 基线模型代码、回测结果、误差图           |
+| [3号](https://github.com/dragon-zhang-woo)  | 算法负责人A  | 移动平均基线模型、指数平滑备选、回测与误差分析、预测兜底链路             | 基线模型代码、回测结果、误差图           |
 | [4号](https://github.com/jfLuo33)  | 算法负责人B  | LightGBM主模型、特征工程、误差评价、库存预警规则                 | 主模型代码、特征工程代码、预测结果表     |
 | [5号](https://github.com/fuyw1)  | 后端负责人   | FastAPI接口、模型调用、数据读取、接口文档与后端联调              | 后端代码、接口文档、运行说明             |
 | [6号](https://github.com/Traveler-BS)  | 前端/测试负责人 | 页面实现、图表交互、测试用例设计、系统截图与录屏                 | 前端页面、测试报告、截图、演示视频素材   |
@@ -168,8 +180,10 @@ pytest tests/test_algorithm.py
 - [需求分析文档](docs/requirements/requirements.md)
 - [数据字典文档](data/data_dict.md)
 - [最小可行产品（MVP）功能文档](docs/requirements/mvp_scope.md)
-- [项目计划与推进方案](docs/management/project_plan.md)  
+- [项目计划与推进方案](docs/management/project_plan.md)
 - [用例](docs/design/use_case.md)
+- [算法A模型答辩讲稿](docs/presentation/algorithm_a_model_defense_0619.md)
+- [算法A答辩PPT页级大纲](docs/presentation/algorithm_a_ppt_outline_0619.md)
 
 ## 📌 版本规划
 
@@ -187,3 +201,5 @@ pytest tests/test_algorithm.py
 ## 📜 免责声明
 
 本项目为课程实践作品，部分或全部数据为模拟或公开数据集，仅用于教学展示。使用者应遵守相应 LICENSE 并对生成内容负责，开发者概不承担由此产生的任何责任。
+
+当前预测模型适合课程演示、趋势参考和原型联调，不应直接作为真实生产采购或库存自动决策依据；实际上线前需要接入持续更新的业务数据、外部影响因素、模型监控和人工审批。
