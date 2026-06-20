@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Sales Forecast System 项目操作数据看板</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #627085;
+      --line: #dbe3ee;
+      --blue: #2563eb;
+      --green: #138a5b;
+      --amber: #b7791f;
+      --red: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    header {
+      padding: 28px 36px 18px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0; }
+    h2 { margin: 0 0 14px; font-size: 18px; }
+    p { margin: 0; color: var(--muted); }
+    main { padding: 24px 36px 36px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .metric-label { color: var(--muted); font-size: 13px; }
+    .metric-value { display: block; margin-top: 6px; font-size: 30px; font-weight: 700; }
+    .metric-note { margin-top: 4px; color: var(--muted); font-size: 12px; }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 2fr 48px;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .bar-track {
+      height: 14px;
+      border-radius: 4px;
+      background: #eef2f7;
+      overflow: hidden;
+    }
+    .bar-fill { height: 100%; background: var(--blue); }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .badge {
+      display: inline-block;
+      margin: 4px 6px 0 0;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #e8f0ff;
+      color: #174ea6;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .warning {
+      border-left: 4px solid var(--amber);
+    }
+    .ok {
+      border-left: 4px solid var(--green);
+    }
+    footer {
+      padding: 0 36px 28px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 900px) {
+      header, main, footer { padding-left: 18px; padding-right: 18px; }
+      .grid, .layout { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AI Sales Forecast System 项目操作数据看板</h1>
+    <p>数据来源：本地 Git 历史、PR 合并记录与 docs/management 排期。实际开发窗口 2026-06-09 to 2026-06-20，对应课程要求的两个月软件工程开发模拟。</p>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card">
+        <span class="metric-label">实际开发窗口提交</span>
+        <span class="metric-value">87</span>
+        <div class="metric-note">含 merge commit，覆盖 6 人协作痕迹</div>
+      </div>
+      <div class="card">
+        <span class="metric-label">非合并开发提交</span>
+        <span class="metric-value">60</span>
+        <div class="metric-note">代码、文档、测试与数据相关操作</div>
+      </div>
+      <div class="card">
+        <span class="metric-label">已合入 PR</span>
+        <span class="metric-value">27</span>
+        <div class="metric-note">PR：#2, #3, #4, #5, #6, #7, #8, #9, #10, #11, #12, #13, #14, #15, #16, #17, #18, #19, #20, #21, #22, #23, #24, #25, #26, #28, #29</div>
+      </div>
+      <div class="card ok">
+        <span class="metric-label">算法A可追踪提交</span>
+        <span class="metric-value">20</span>
+        <div class="metric-note">含旧 Gitee noreply 与新 GitHub 邮箱身份</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card">
+        <h2>贡献者操作分布</h2>
+        <div class="bar-row"><span>AstonFrwine（项目管理）</span><div class="bar-track"><div class="bar-fill" style="width: 100.0%"></div></div><strong>54</strong></div>
+<div class="bar-row"><span>张航晨 / dragon-zhang-woo（算法A）</span><div class="bar-track"><div class="bar-fill" style="width: 37.0%"></div></div><strong>20</strong></div>
+<div class="bar-row"><span>ljf / jfLuo33（算法B）</span><div class="bar-track"><div class="bar-fill" style="width: 14.8%"></div></div><strong>8</strong></div>
+<div class="bar-row"><span>fuyw1（后端）</span><div class="bar-track"><div class="bar-fill" style="width: 9.3%"></div></div><strong>5</strong></div>
+      </div>
+      <div class="card">
+        <h2>每日提交节奏</h2>
+        <div class="bar-row"><span>2026-06-09</span><div class="bar-track"><div class="bar-fill" style="width: 81.0%"></div></div><strong>17</strong></div>
+<div class="bar-row"><span>2026-06-10</span><div class="bar-track"><div class="bar-fill" style="width: 42.9%"></div></div><strong>9</strong></div>
+<div class="bar-row"><span>2026-06-11</span><div class="bar-track"><div class="bar-fill" style="width: 100.0%"></div></div><strong>21</strong></div>
+<div class="bar-row"><span>2026-06-12</span><div class="bar-track"><div class="bar-fill" style="width: 9.5%"></div></div><strong>2</strong></div>
+<div class="bar-row"><span>2026-06-13</span><div class="bar-track"><div class="bar-fill" style="width: 28.6%"></div></div><strong>6</strong></div>
+<div class="bar-row"><span>2026-06-14</span><div class="bar-track"><div class="bar-fill" style="width: 38.1%"></div></div><strong>8</strong></div>
+<div class="bar-row"><span>2026-06-15</span><div class="bar-track"><div class="bar-fill" style="width: 23.8%"></div></div><strong>5</strong></div>
+<div class="bar-row"><span>2026-06-17</span><div class="bar-track"><div class="bar-fill" style="width: 47.6%"></div></div><strong>10</strong></div>
+<div class="bar-row"><span>2026-06-18</span><div class="bar-track"><div class="bar-fill" style="width: 9.5%"></div></div><strong>2</strong></div>
+<div class="bar-row"><span>2026-06-19</span><div class="bar-track"><div class="bar-fill" style="width: 23.8%"></div></div><strong>5</strong></div>
+<div class="bar-row"><span>2026-06-20</span><div class="bar-track"><div class="bar-fill" style="width: 9.5%"></div></div><strong>2</strong></div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="card">
+        <h2>两个月模拟周期映射</h2>
+        <div class="bar-row"><span>第1周</span><div class="bar-track"><div class="bar-fill" style="width: 73.9%"></div></div><strong>17</strong></div>
+<div class="bar-row"><span>第2周</span><div class="bar-track"><div class="bar-fill" style="width: 39.1%"></div></div><strong>9</strong></div>
+<div class="bar-row"><span>第3周</span><div class="bar-track"><div class="bar-fill" style="width: 100.0%"></div></div><strong>23</strong></div>
+<div class="bar-row"><span>第4周</span><div class="bar-track"><div class="bar-fill" style="width: 60.9%"></div></div><strong>14</strong></div>
+<div class="bar-row"><span>第5周</span><div class="bar-track"><div class="bar-fill" style="width: 21.7%"></div></div><strong>5</strong></div>
+<div class="bar-row"><span>第6周</span><div class="bar-track"><div class="bar-fill" style="width: 0.0%"></div></div><strong>0</strong></div>
+<div class="bar-row"><span>第7周</span><div class="bar-track"><div class="bar-fill" style="width: 52.2%"></div></div><strong>12</strong></div>
+<div class="bar-row"><span>第8周</span><div class="bar-track"><div class="bar-fill" style="width: 30.4%"></div></div><strong>7</strong></div>
+      </div>
+      <div class="card warning">
+        <h2>贡献归属说明</h2>
+        <p>算法A早期提交作者为 <strong>张航晨 &lt;16723149+zhang-hangchen464654@user.noreply.gitee.com&gt;</strong>。该邮箱是 Gitee noreply，GitHub 贡献者组件可能无法自动归属到 dragon-zhang-woo，但 Git 历史、PR 与文档均可追踪。</p>
+        <p style="margin-top: 10px;">6/20 后续提交已切换为 <strong>dragon-zhang-woo &lt;zhanghch66@mail2.sysu.edu.cn&gt;</strong>。</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>模拟两个月开发排期与交付证据</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模拟周</th>
+            <th>阶段</th>
+            <th>关键交付</th>
+            <th>提交数</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>第1周</td><td>立项与需求收敛</td><td>项目初始化、README、需求与计划文档</td><td>17</td></tr>
+<tr><td>第2周</td><td>架构与数据准备</td><td>后端框架、系统架构、原始数据接入</td><td>9</td></tr>
+<tr><td>第3周</td><td>算法A基线模型</td><td>移动平均模型、真实数据验证、测试报告</td><td>23</td></tr>
+<tr><td>第4周</td><td>预测接口与算法B接入</td><td>预测服务、LightGBM、接口契约回退</td><td>14</td></tr>
+<tr><td>第5周</td><td>评估与预警联调</td><td>MAE评估、指数平滑、库存预警链路</td><td>5</td></tr>
+<tr><td>第6周</td><td>测试与缺陷修复</td><td>异常输入、LightGBM可选依赖、接口回归</td><td>0</td></tr>
+<tr><td>第7周</td><td>演示材料与页面联调</td><td>模型对比图、预测页、最终回归</td><td>12</td></tr>
+<tr><td>第8周</td><td>答辩收口与交付</td><td>讲稿、PPT大纲、贡献归属与最终包</td><td>7</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card" style="margin-top: 18px;">
+      <h2>算法A交付摘要</h2>
+      <div>
+        <span class="badge">移动平均基线</span>
+        <span class="badge">指数平滑备选</span>
+        <span class="badge">LightGBM 回退</span>
+        <span class="badge">/api/predict 契约稳定</span>
+        <span class="badge">MAE 评估</span>
+        <span class="badge">库存预警联调</span>
+        <span class="badge">预测页回归</span>
+        <span class="badge">答辩图表</span>
+      </div>
+      <p style="margin-top: 12px;">算法A相关 PR 证据：#12, #13, #15, #16, #18, #21, #23, #24, #26, #29, #30。该看板不重写提交历史，不伪造日期；它把课程压缩开发周期、真实 Git 操作记录和答辩交付物放在同一张可展示页面中。</p>
+    </section>
+  </main>
+
+  <footer>
+    Generated at 2026-06-20T10:18:11. Reproduce with: python scripts/generate_project_operation_dashboard.py
+  </footer>
+</body>
+</html>
