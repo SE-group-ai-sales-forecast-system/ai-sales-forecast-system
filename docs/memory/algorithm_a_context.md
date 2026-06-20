@@ -176,6 +176,7 @@
 40. 新增模型答辩讲稿和 PPT 页级大纲，整理移动平均默认策略理由、MAE 对比、演示话术和生产使用边界。
 41. 更新 README、测试报告和记忆文件，记录 6/19 验证结果、PR #28 归属和 PR #29 状态。
 42. 创建 PR #29，作为算法A 6/19 答辩材料独立 PR。
+43. 6/20 检查 GitHub 贡献归属问题：历史算法A提交作者邮箱为 Gitee noreply，GitHub 贡献者页可能无法自动归属；已将本仓库后续提交身份切换为 `dragon-zhang-woo <zhanghch66@mail2.sysu.edu.cn>`，后续算法A协作提交应使用该身份。
 
 ### 后续建议计划
 
@@ -186,6 +187,7 @@
 5. 与前端/后端成员确认 `/api/predict` 字段不再变更，避免影响预测页和库存预警页。
 6. 最终提交包需确认 `data/raw/global_ecommerce_sales.csv`、`docs/testing/images/moving_average_vs_actual_0617.png`、测试报告和 README 均包含在内。
 7. 若数据负责人提供新的每日聚合表，补充基于该数据源的集成测试；最终阶段不再新增 Prophet、SARIMAX 或复杂调参。
+8. 后续提交前确认 `git config user.email` 为 `zhanghch66@mail2.sysu.edu.cn`，且该邮箱已在 GitHub 账号 `dragon-zhang-woo` 中验证，避免新增贡献再次无法被 GitHub 贡献者统计识别。
 
 ## 5. 必须严格遵守的协作规范
 
