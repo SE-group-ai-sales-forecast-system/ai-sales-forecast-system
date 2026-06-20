@@ -181,6 +181,8 @@ python -m unittest discover -s tests -p "test_*.py" -v
 - [数据字典文档](data/data_dict.md)
 - [最小可行产品（MVP）功能文档](docs/requirements/mvp_scope.md)
 - [项目计划与推进方案](docs/management/project_plan.md)
+- [项目操作数据看板](docs/operation/project_operation_dashboard_0620.md)
+- [项目贡献说明](CONTRIBUTORS.md)
 - [用例](docs/design/use_case.md)
 - [算法A模型答辩讲稿](docs/presentation/algorithm_a_model_defense_0619.md)
 - [算法A答辩PPT页级大纲](docs/presentation/algorithm_a_ppt_outline_0619.md)
