@@ -1,10 +1,6 @@
 # 基于 AI 智能的电商商品销售分析与预测系统
 
-> 软件工程课程实践项目 —— 企业商业智能（BI）分析系统 / 电商销售预测系统
-
-## ‼️ [极限冲刺时间表](docs/management/detailed_assignment.md)
-
-**6月22日**（第 17 周）就要小组演示了，满打满算还有 4 天。
+> 软件工程课程实践项目 —— 企业商业智能（BI）分析系统 / 电商销售预测系统，**6月22日**（第 17 周）小组演示。
 
 ## 📖 项目简介
 
@@ -184,6 +180,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 - [项目操作数据看板](docs/operation/project_operation_dashboard_0620.md)
 - [项目贡献说明](CONTRIBUTORS.md)
 - [用例](docs/design/use_case.md)
+- [‼️ 极限冲刺时间表](docs/management/detailed_assignment.md)
 - [算法A模型答辩讲稿](docs/presentation/algorithm_a_model_defense_0619.md)
 - [算法A答辩PPT页级大纲](docs/presentation/algorithm_a_ppt_outline_0619.md)
 
