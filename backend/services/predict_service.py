@@ -27,7 +27,8 @@ class PredictService:
 
         try:
             from algorithm.lightgbm_model import LightGBMPredictor
-            self.lightgbm = LightGBMPredictor()
+            default_data = self._default_data_source()
+            self.lightgbm = LightGBMPredictor(data=default_data)
         except Exception as e:
             print(f"LightGBM模型导入失败: {e}")
     
