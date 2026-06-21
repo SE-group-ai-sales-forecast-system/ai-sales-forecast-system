@@ -267,6 +267,40 @@ def render_analysis_page() -> None:
     st.subheader("数据预览")
     st.dataframe(data.head(20), use_container_width=True)
 
+    if "Order_Date" in data.columns and "Total_Sales" in data.columns:
+        st.subheader("销售趋势折线图")
+
+        trend_data = data.copy()
+        trend_data["Order_Date"] = pd.to_datetime(trend_data["Order_Date"], errors="coerce")
+        trend_data = trend_data.dropna(subset=["Order_Date"])
+
+        if not trend_data.empty:
+            monthly_sales = (
+                trend_data
+                .set_index("Order_Date")
+                .resample("ME")["Total_Sales"]
+                .sum()
+                .reset_index()
+            )
+            monthly_sales["月份"] = monthly_sales["Order_Date"].dt.strftime("%Y-%m")
+            monthly_sales = monthly_sales.rename(columns={"Total_Sales": "销售额"})
+
+            if px is not None:
+                fig = px.line(
+                    monthly_sales,
+                    x="月份",
+                    y="销售额",
+                    markers=True,
+                    title="月度销售额趋势",
+                    labels={"月份": "月份", "销售额": "销售额"},
+                )
+                fig.update_layout(margin={"l": 10, "r": 10, "t": 50, "b": 10})
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.line_chart(monthly_sales.set_index("月份")["销售额"])
+        else:
+            st.warning("订单日期字段无法解析，暂时无法生成销售趋势图。")
+
     if "Product_Category" in data.columns:
         st.subheader("不同商品品类销售数量对比")
 
