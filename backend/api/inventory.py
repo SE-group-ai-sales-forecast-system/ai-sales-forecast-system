@@ -1,57 +1,43 @@
 # backend/api/inventory.py
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
+
+import pandas as pd
+
+from algorithm.inventory_warning import compute_inventory_warnings
 from models.schemas import InventoryWarning
 from services.data_service import data_service
-from services.predict_service import predict_service
-import random
+from services.predict_service import DEFAULT_RAW_DATA_PATH, predict_service
 
 router = APIRouter()
 
+
+def _load_warning_data():
+    """优先使用上传数据，未上传时回退仓库内默认 CSV。"""
+    if data_service.current_data is not None:
+        return data_service.current_data
+
+    if DEFAULT_RAW_DATA_PATH.exists():
+        return pd.read_csv(DEFAULT_RAW_DATA_PATH)
+
+    return None
+
+
 @router.get("/inventory/warnings", response_model=list[InventoryWarning])
 async def get_inventory_warnings():
-    """获取库存预警信息"""
+    """获取库存预警信息（按产品类别）。"""
     try:
-        if data_service.current_data is None:
-            raise HTTPException(400, "请先上传数据文件")
-        
-        df = data_service.current_data.copy()
-        
-        # 获取所有商品列表
-        products = df['Product_Name'].unique().tolist()[:20]
-        
-        warnings = []
-        for product in products:
-            # 模拟当前库存
-            current_stock = random.randint(100, 1000)
-            
-            # 获取预测销量
-            try:
-                result = predict_service.predict(product, 7, "lightgbm")
-                predicted_demand = sum(result["sales"])
-            except:
-                predicted_demand = random.randint(50, 200)
-            
-            # 判断库存状态
-            if current_stock < predicted_demand * 0.5:
-                status = "库存不足"
-                suggested_order = int(predicted_demand * 1.5 - current_stock)
-            elif current_stock > predicted_demand * 3:
-                status = "库存过高"
-                suggested_order = 0
-            else:
-                status = "正常"
-                suggested_order = int(predicted_demand * 0.8)
-            
-            warnings.append(InventoryWarning(
-                product_id=product,
-                product_name=product,
-                current_stock=current_stock,
-                predicted_demand=int(predicted_demand),
-                status=status,
-                suggested_order=suggested_order
-            ))
-        
-        return warnings
-        
+        data = _load_warning_data()
+        if data is None:
+            raise HTTPException(400, "请先上传数据文件，或确保默认 CSV 存在")
+
+        def predict_fn(category: str, days: int):
+            # LightGBM 失败时 PredictService 会自动回退移动平均
+            return predict_service.predict(category, days, "lightgbm")
+
+        raw_warnings = compute_inventory_warnings(data, predict_fn=predict_fn)
+        return [InventoryWarning(**item) for item in raw_warnings]
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(500, f"库存预警失败: {str(e)}")
