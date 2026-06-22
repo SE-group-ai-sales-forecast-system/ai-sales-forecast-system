@@ -12,15 +12,17 @@ router = APIRouter()
 
 
 def _load_warning_data():
-    """优先使用上传数据，未上传时回退仓库内默认 CSV。"""
+    """优先使用上传数据，未上传时回退数据库。"""
     if data_service.current_data is not None:
         return data_service.current_data
 
-    if DEFAULT_RAW_DATA_PATH.exists():
-        return pd.read_csv(DEFAULT_RAW_DATA_PATH)
-
-    return None
-
+    try:
+        from database import get_orders_df
+        return get_orders_df()
+    except Exception:
+        if DEFAULT_RAW_DATA_PATH.exists():
+            return pd.read_csv(DEFAULT_RAW_DATA_PATH)
+        return None
 
 @router.get("/inventory/warnings", response_model=list[InventoryWarning])
 async def get_inventory_warnings():

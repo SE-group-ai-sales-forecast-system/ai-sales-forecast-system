@@ -18,7 +18,7 @@ async def get_sales_analysis(
         
         df = data_service.current_data.copy()
         
-        # 映射列名（适配你的 CSV）
+        # 映射列名
         date_col = "Order_Date"           # 订单日期
         product_col = "Product_Name"      # 商品名称
         sales_col = "Quantity"            # 销量（数量）

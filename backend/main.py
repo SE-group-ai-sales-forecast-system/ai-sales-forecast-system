@@ -9,11 +9,27 @@ if backend_root_text not in sys.path:
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api import upload, analysis, predict, inventory, auth
+from contextlib import asynccontextmanager
+from database import init_db, import_csv_to_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+
+    default_csv = Path(__file__).resolve().parents[1] / "data" / "raw" / "global_ecommerce_sales.csv"
+    if default_csv.exists():
+        try:
+            import_csv_to_db(str(default_csv), table_name="orders")
+        except Exception as e:
+            print(f"默认数据导入失败: {e}")
+
+    yield
 
 app = FastAPI(
     title="AI销售预测系统API",
     description="电商销售数据分析与预测后端接口",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # 配置CORS，允许前端调用

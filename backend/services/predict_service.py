@@ -98,9 +98,13 @@ class PredictService:
             return None
 
     def _default_data_source(self):
-        if self.default_data_path.exists():
-            return self.default_data_path
-        return None
+            try:
+                from database import get_orders_df
+                return get_orders_df()
+            except Exception:
+                if self.default_data_path.exists():
+                    return self.default_data_path
+                return None
 
     def _normalize_days(self, days, default: int = 7) -> int:
         if isinstance(days, bool):
