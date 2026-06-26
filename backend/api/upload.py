@@ -17,12 +17,9 @@ async def upload_file(
         raise HTTPException(400, "只支持CSV格式文件")
     
     try:
-        # 读取文件
-        content = await file.read()
-        filepath = data_service.save_upload_file(content, file.filename)
         
         # 加载并分析数据
-        df = data_service.load_data(filepath)
+        df = data_service.load_data()
         file_info = data_service.get_file_info(df)
         
         return UploadResponse(
