@@ -6,6 +6,7 @@ from urllib import error, request
 
 import pandas as pd
 import streamlit as st
+import requests
 
 try:
     import plotly.express as px
@@ -386,6 +387,50 @@ def render_inventory_page() -> None:
     )
 
     st.info("库存预警规则：当前库存 < 预测需求量 + 安全库存时，系统提示库存不足并给出补货建议。")
+
+def render_upload_page() -> None:
+    st.title("自定义数据上传")
+    st.caption("前端支持上传CSV销售数据，并调用后端上传接口进行处理。")
+
+    if not st.session_state.get("token"):
+        st.info("请先在左侧登录，然后上传数据。")
+        return
+
+    uploaded_file = st.file_uploader(
+        "请选择CSV文件",
+        type=["csv"],
+    )
+
+    if uploaded_file is not None:
+        st.write("文件名：", uploaded_file.name)
+
+        if st.button("上传数据", use_container_width=True):
+            try:
+                response = requests.post(
+                    f"{st.session_state.backend_url.rstrip('/')}/api/upload",
+                    files={
+                        "file": (
+                            uploaded_file.name,
+                            uploaded_file,
+                            "text/csv",
+                        )
+                    },
+                    headers={
+                        "Authorization": f"Bearer {st.session_state['token']}"
+                    },
+                    timeout=20,
+                )
+
+                if response.status_code == 200:
+                    st.success("数据上传成功")
+                    st.json(response.json())
+                else:
+                    st.error(f"上传失败：{response.text}")
+
+            except Exception as exc:
+                st.error(f"无法连接后端服务：{exc}")
+
+
 def render_about_page() -> None:
     st.title("系统说明")
 
@@ -415,7 +460,7 @@ def main() -> None:
 
     page = st.sidebar.radio(
         "功能导航",
-        ["首页看板", "销售预测", "销售分析", "库存预警", "系统说明"],
+        ["首页看板", "销售预测", "销售分析", "库存预警", "数据上传", "系统说明"],
     )
 
     if page == "首页看板":
@@ -426,6 +471,8 @@ def main() -> None:
         render_analysis_page()
     elif page == "库存预警":
         render_inventory_page()
+    elif page == "数据上传":
+        render_upload_page()
     elif page == "系统说明":
         render_about_page()
 
