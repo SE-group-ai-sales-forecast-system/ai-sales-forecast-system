@@ -29,54 +29,68 @@
 | **测试**     | Pytest                                                        |
 | **版本控制** | Git + GitHub（私有仓库）                                     |
 
-## 📁 目录结构（预测）
+## 📁 项目基本结构
 
 ```
 ai-sales-forecast-system/
 │
 ├── .gitignore
 ├── README.md
+├── CONTRIBUTORS.md
+├── BRANCH_STRATEGY.md
 ├── requirements.txt
 │
-├── data/                     # 数据目录
-│   ├── raw/                  # 原始数据（不提交git）
-│   ├── processed/            # 清洗后数据（示例数据可提交）
-│   └── data_dict.md          # 字段说明
+├── data/                                           # 数据目录
+│   ├── raw/                                        # 原始数据
+│   ├── processed/                                  # 清洗后数据
+│   ├── data_preprocessing_and_features.md          # 预处理与特征工程指南
+│   └── data_dict.md                                # 字段说明
 │
 ├── backend/                  # FastAPI后端
 │   ├── __init__.py
 │   ├── main.py               # 入口文件
+│   ├── config.py
+│   ├── database.py
 │   ├── api/                  # 路由
+│   ├── db/
+│   ├── dependencies/
+│   ├── utils/
 │   ├── models/               # 数据模型
 │   ├── services/             # 业务逻辑
 │   └── config.py
 │
 ├── frontend/                 # 前端应用
 │   ├── app.py                # Streamlit主程序
-│   ├── pages/                # 多页面（登录、数据管理、分析、预测、预警）
+│   ├── pages/                # 多页面
 │   └── assets/
 │
 ├── algorithm/                # 算法模块
+│   ├── __init__.py
 │   ├── data_cleaning.py
 │   ├── feature_engineering.py
+│   ├── forecast_visualization.py
 │   ├── baseline_model.py
 │   ├── lightgbm_model.py
+│   ├── lightgbm_evaluation.py
 │   ├── inventory_warning.py
 │   └── evaluation.py
 │
 ├── tests/                    # 测试用例
-│   ├── test_backend.py
 │   ├── test_algorithm.py
 │   └── test_cases.md
 │
 ├── docs/                     # 文档
 │   ├── requirements/         # 需求分析文档
+│   ├── memory/
+│   ├── testing/
+│   ├── operation/
 │   ├── design/               # 软件设计文档
 │   ├── management/           # 项目管理文档（分工、甘特图）
 │   └── presentation/         # PPT、视频素材
 │
 └── scripts/                  # 辅助脚本
-    └── run.sh / run.bat
+    ├── start.py
+    └── generate_project_operation_dashboard.py
 ```
 
 ## 🚀 用户快速开始
@@ -180,7 +194,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 - [项目操作数据看板](docs/operation/project_operation_dashboard_0620.md)
 - [项目贡献说明](CONTRIBUTORS.md)
 - [用例](docs/design/use_case.md)
-- [‼️ 极限冲刺时间表](docs/management/detailed_assignment.md)
+- [项目安排时间表](docs/management/detailed_assignment.md)
 - [算法A模型答辩讲稿](docs/presentation/algorithm_a_model_defense_0619.md)
 - [算法A答辩PPT页级大纲](docs/presentation/algorithm_a_ppt_outline_0619.md)
 
@@ -188,7 +202,7 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 - **v0.1**：完成数据清洗、销售分析基础可视化、基线模型。
 - **v0.2**：完成LightGBM预测、库存预警、前后端联调、完整页面。
-- **v1.0**：系统测试、文档完善、答辩准备。
+- **v1.0**：系统测试、文档完善、展示准备。
 
 ## 🤝 贡献指南
 
@@ -199,6 +213,6 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ## 📜 免责声明
 
-本项目为课程实践作品，部分或全部数据为模拟或公开数据集，仅用于教学展示。使用者应遵守相应 LICENSE 并对生成内容负责，开发者概不承担由此产生的任何责任。
+本项目为课程实践作品，部分或全部数据为模拟或公开数据集，仅用于教学展示。使用者应遵守相应 LICENSE 并对生成内容负责，开发者对使用者以任何程度使用本项目所产生的任何损失或纠纷概不承担责任。
 
 当前预测模型适合课程演示、趋势参考和原型联调，不应直接作为真实生产采购或库存自动决策依据；实际上线前需要接入持续更新的业务数据、外部影响因素、模型监控和人工审批。

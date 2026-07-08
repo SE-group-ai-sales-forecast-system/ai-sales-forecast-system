@@ -6,12 +6,12 @@
 
 | 成员 | GitHub | 角色 | 主要交付 |
 | --- | --- | --- | --- |
-| 1号 | AstonFrwine | 项目经理 | 需求收敛、任务分配、文档汇总、PR 合并、答辩组织 |
-| 2号 | ClaytonWs | 数据负责人 | 数据整理、字段字典、数据质量说明 |
-| 3号 | dragon-zhang-woo | 算法负责人A | 移动平均基线、指数平滑备选、预测接口回退、MAE 评估、模型对比图、预测页回归协助 |
-| 4号 | jfLuo33 | 算法负责人B | LightGBM、特征工程、库存预警规则、模型评估 |
-| 5号 | fuyw1 | 后端负责人 | FastAPI 接口、登录、启动脚本、后端联调 |
-| 6号 | Traveler-BS | 前端/测试负责人 | Streamlit 页面、测试用例、演示视频素材 |
+| 1号 | [AstonFrwine](https://github.com/AstonFrwine) | 项目经理 | 需求收敛、任务分配、文档汇总、PR 合并、答辩组织 |
+| 2号 | [ClaytonWs](https://github.com/ClaytonWs) | 数据负责人 | 数据整理、字段字典、数据质量说明 |
+| 3号 | [dragon-zhang-woo](https://github.com/dragon-zhang-woo) | 算法负责人A | 移动平均基线、指数平滑备选、预测接口回退、MAE 评估、模型对比图、预测页回归协助 |
+| 4号 | [jfLuo33](https://github.com/jfLuo33) | 算法负责人B | LightGBM、特征工程、库存预警规则、模型评估 |
+| 5号 | [fuyw1](https://github.com/fuyw1) | 后端负责人 | FastAPI 接口、登录、启动脚本、后端联调 |
+| 6号 | [Traveler-BS](https://github.com/Traveler-BS) | 前端/测试负责人 | Streamlit 页面、测试用例、演示视频素材 |
 
 ## 算法A贡献归属说明
 
